@@ -11,11 +11,27 @@ class Company extends Model implements HasMedia
 {
     use InteractsWithMedia, HasFactory;
 
-    protected $fillable = ['name', 'slug', 'settings'];
+    protected $fillable = [
+        'name',
+        'slug',
+        'address',
+        'phone',
+        'email',
+        'vat_number',
+        'primary_color',
+        'settings',
+    ];
 
     protected $casts = [
         'settings' => 'json',
     ];
+
+    protected $appends = ['logo_url'];
+
+    public function getLogoUrlAttribute(): string
+    {
+        return $this->getFirstMediaUrl('logo');
+    }
 
     public function users()
     {

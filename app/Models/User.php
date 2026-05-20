@@ -16,6 +16,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 use App\Traits\BelongsToCompany;
 
+use Illuminate\Support\Facades\Storage;
+
 #[Fillable(['name', 'email', 'password', 'company_id', 'role', 'is_active'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
@@ -35,6 +37,26 @@ class User extends Authenticatable implements PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the URL for the user's avatar.
+     */
+    protected function avatarUrl(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function () {
+                if ($this->avatar) {
+                    return Storage::disk('public')->url($this->avatar);
+                }
+
+                if ($this->company_id && $this->company) {
+                    return $this->company->getFirstMediaUrl('logo');
+                }
+
+                return null;
+            },
+        );
     }
 
     /**

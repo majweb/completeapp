@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Users, ClipboardList, FileText, HardHat } from 'lucide-react';
+import { LayoutGrid, Users, ClipboardList, FileText, HardHat, Settings } from 'lucide-react';
 import { index as clientsIndex } from '@/actions/App/Http/Controllers/ClientController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -15,6 +15,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { edit as companySettingsRoute } from '@/routes/company';
 import { index as jobTemplatesIndex } from '@/routes/job-templates';
 import { index as jobsIndex } from '@/routes/jobs';
 import { index as techniciansIndexRoute } from '@/routes/technicians';
@@ -57,6 +58,14 @@ export function AppSidebar() {
                 icon: Users,
             }
         );
+
+        if (user.role === 'owner') {
+            mainNavItems.push({
+                title: 'Ustawienia firmy',
+                href: companySettingsRoute(),
+                icon: Settings,
+            });
+        }
     } else if (user.role === 'technician') {
         // Technicians can also see clients (view only)
         mainNavItems.push({
@@ -72,7 +81,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={dashboard()}>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

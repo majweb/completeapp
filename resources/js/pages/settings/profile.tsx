@@ -1,5 +1,7 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
+import React from 'react';
+
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
@@ -44,7 +46,7 @@ export default function Profile({
                     }}
                     className="space-y-6"
                 >
-                    {({ processing, errors }) => (
+                    {({ processing: formProcessing, errors: formErrors }) => (
                         <>
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
@@ -61,7 +63,7 @@ export default function Profile({
 
                                 <InputError
                                     className="mt-2"
-                                    message={errors.name}
+                                    message={formErrors.name}
                                 />
                             </div>
 
@@ -81,7 +83,7 @@ export default function Profile({
 
                                 <InputError
                                     className="mt-2"
-                                    message={errors.email}
+                                    message={formErrors.email}
                                 />
                             </div>
 
@@ -112,7 +114,7 @@ export default function Profile({
 
                             <div className="flex items-center gap-4">
                                 <Button
-                                    disabled={processing}
+                                    disabled={formProcessing}
                                     data-test="update-profile-button"
                                 >
                                     Save

@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TechnicianController;
+use App\Http\Controllers\JobTemplateController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -13,14 +15,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('clients', ClientController::class);
     Route::resource('jobs', JobController::class);
-    Route::resource('job-templates', \App\Http\Controllers\JobTemplateController::class);
+    Route::resource('job-templates', JobTemplateController::class);
     Route::resource('technicians', TechnicianController::class)->only(['index', 'store', 'update', 'destroy']);
+
     Route::post('jobs/{job}/media', [JobController::class, 'uploadMedia'])->name('jobs.uploadMedia');
     Route::delete('jobs/{job}/media/{media}', [JobController::class, 'deleteMedia'])->name('jobs.deleteMedia');
     Route::post('jobs/{job}/media/reorder', [JobController::class, 'reorderMedia'])->name('jobs.reorderMedia');
     Route::post('jobs/{job}/signature', [JobController::class, 'saveSignature'])->name('jobs.saveSignature');
     Route::get('jobs/{job}/report', [JobController::class, 'downloadReport'])->name('jobs.report');
     Route::post('jobs/{job}/report/send', [JobController::class, 'sendReport'])->name('jobs.sendReport');
+
+    Route::get('/company/settings', [CompanyController::class, 'edit'])->name('company.edit');
+    Route::post('/company/settings', [CompanyController::class, 'update'])->name('company.update');
 });
 
 require __DIR__.'/settings.php';

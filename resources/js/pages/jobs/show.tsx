@@ -321,7 +321,9 @@ export default function Show({ job }: Props) {
             status: 'completed'
         }, {
             onSuccess: () => setIsFinishDialogOpen(false),
-            onFinish: () => setIsFinishDialogOpen(false),
+            onError: () => {
+                setIsFinishDialogOpen(false);
+            },
             preserveScroll: true,
         });
     };

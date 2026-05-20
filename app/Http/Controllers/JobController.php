@@ -156,9 +156,10 @@ class JobController extends Controller
 
             // Walidacja pól wymaganych w checklist_content
             $errors = [];
-            foreach ($checklist_content as $item) {
-                if (!empty($item['required']) && (is_null($item['value']) || $item['value'] === '' || $item['value'] === false)) {
-                    $errors["checklist_content.{$item['id']}"] = "To pole jest wymagane.";
+            foreach ($checklist_content as $index => $item) {
+                $val = $item['value'] ?? null;
+                if (!empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                    $errors["checklist_content.{$index}.value"] = "To pole jest wymagane.";
                 }
             }
 

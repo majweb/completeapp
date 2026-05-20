@@ -7,6 +7,7 @@ use App\Concerns\ProfileValidationRules;
 use App\Models\User;
 use App\Models\Company;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -23,21 +24,24 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         Validator::make($input, [
-            ...$this->profileRules(),
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => $this->passwordRules(),
+            'company_name' => ['required', 'string', 'max:255'],
         ])->validate();
 
         return DB::transaction(function () use ($input) {
             $company = Company::create([
-                'name' => 'Firma ' . $input['name'],
-                'slug' => Str::slug('firma-' . $input['name']),
+                'name' => $input['company_name'],
+                'slug' => Str::slug($input['company_name']),
             ]);
 
             return User::create([
                 'name' => $input['name'],
                 'email' => $input['email'],
-                'password' => $input['password'],
+                'password' => Hash::make($input['password']),
                 'company_id' => $company->id,
+                'role' => 'owner',
             ]);
         });
     }

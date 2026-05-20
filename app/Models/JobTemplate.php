@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
 use App\Traits\BelongsToCompany;
 
 class JobTemplate extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, HasFactory;
 
     protected $fillable = [
         'name',

@@ -1,8 +1,6 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users, ClipboardList, FileText, HardHat } from 'lucide-react';
-
+import { Link, usePage } from '@inertiajs/react';
+import { LayoutGrid, Users, ClipboardList, FileText, HardHat } from 'lucide-react';
 import { index as clientsIndex } from '@/actions/App/Http/Controllers/ClientController';
-import { index as techniciansIndex } from '@/actions/App/Http/Controllers/TechnicianController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -22,48 +20,52 @@ import { index as jobsIndex } from '@/routes/jobs';
 import { index as techniciansIndexRoute } from '@/routes/technicians';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Zlecenia',
-        href: jobsIndex(),
-        icon: ClipboardList,
-    },
-    {
-        title: 'Szablony zleceń',
-        href: jobTemplatesIndex(),
-        icon: FileText,
-    },
-    {
-        title: 'Ekipa (Technicy)',
-        href: techniciansIndexRoute(),
-        icon: HardHat,
-    },
-    {
-        title: 'Klienci',
-        href: clientsIndex.url(),
-        icon: Users,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
+const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
+    const { auth } = usePage().props as any;
+    const user = auth.user;
+
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Zlecenia',
+            href: jobsIndex(),
+            icon: ClipboardList,
+        },
+    ];
+
+    if (user.role === 'owner' || user.role === 'manager') {
+        mainNavItems.push(
+            {
+                title: 'Szablony zleceń',
+                href: jobTemplatesIndex(),
+                icon: FileText,
+            },
+            {
+                title: 'Ekipa (Technicy)',
+                href: techniciansIndexRoute(),
+                icon: HardHat,
+            },
+            {
+                title: 'Klienci',
+                href: clientsIndex.url(),
+                icon: Users,
+            }
+        );
+    } else if (user.role === 'technician') {
+        // Technicians can also see clients (view only)
+        mainNavItems.push({
+            title: 'Klienci',
+            href: clientsIndex.url(),
+            icon: Users,
+        });
+    }
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

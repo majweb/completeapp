@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { LucidePencil, LucidePlus, LucideTrash2, LucideUser } from 'lucide-react';
 import { useState } from 'react';
 
@@ -41,6 +41,10 @@ interface Props {
 }
 
 export default function Index({ clients }: Props) {
+    const { auth } = usePage().props as any;
+    const user = auth.user;
+    const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
+
     const { delete: destroyClient } = useForm();
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [clientToDelete, setClientToDelete] = useState<number | null>(null);
@@ -67,12 +71,14 @@ export default function Index({ clients }: Props) {
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Klienci</h1>
-                    <Button asChild className="cursor-pointer">
-                        <Link href={create.url()}>
-                            <LucidePlus className="mr-2 h-4 w-4" />
-                            Dodaj klienta
-                        </Link>
-                    </Button>
+                    {isOwnerOrManager && (
+                        <Button asChild className="cursor-pointer">
+                            <Link href={create.url()}>
+                                <LucidePlus className="mr-2 h-4 w-4" />
+                                Dodaj klienta
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -95,21 +101,25 @@ export default function Index({ clients }: Props) {
                                     {client.address && <p className="truncate">Adres: {client.address}</p>}
                                 </div>
                                 <div className="mt-4 flex justify-end gap-2">
-                                    <Button variant="outline" size="sm" asChild className="cursor-pointer">
-                                        <Link href={edit.url(client.id)}>
-                                            <LucidePencil className="mr-2 h-4 w-4" />
-                                            Edytuj
-                                        </Link>
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => handleDeleteClick(client.id)}
-                                        className="cursor-pointer"
-                                    >
-                                        <LucideTrash2 className="mr-2 h-4 w-4" />
-                                        Usuń
-                                    </Button>
+                                    {isOwnerOrManager && (
+                                        <>
+                                            <Button variant="outline" size="sm" asChild className="cursor-pointer">
+                                                <Link href={edit.url(client.id)}>
+                                                    <LucidePencil className="mr-2 h-4 w-4" />
+                                                    Edytuj
+                                                </Link>
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => handleDeleteClick(client.id)}
+                                                className="cursor-pointer"
+                                            >
+                                                <LucideTrash2 className="mr-2 h-4 w-4" />
+                                                Usuń
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -118,9 +128,11 @@ export default function Index({ clients }: Props) {
                     {clients.data.length === 0 && (
                         <div className="col-span-full flex h-40 flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
                             <p>Brak klientów w bazie.</p>
-                            <Button variant="link" asChild className="cursor-pointer">
-                                <Link href={create.url()}>Dodaj pierwszego klienta</Link>
-                            </Button>
+                            {isOwnerOrManager && (
+                                <Button variant="link" asChild className="cursor-pointer">
+                                    <Link href={create.url()}>Dodaj pierwszego klienta</Link>
+                                </Button>
+                            )}
                         </div>
                     )}
                 </div>

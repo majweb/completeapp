@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Enums\JobStatus;
@@ -14,7 +15,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Job extends Model implements HasMedia
 {
-    use InteractsWithMedia, BelongsToCompany;
+    use InteractsWithMedia, BelongsToCompany, HasFactory;
 
     protected $table = 'work_jobs';
 

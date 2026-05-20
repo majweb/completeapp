@@ -9,20 +9,16 @@ import { dashboard } from '@/routes';
 
 const STATUS_LABELS: Record<string, string> = {
     new: 'Nowe',
-    assigned: 'Przypisane',
     in_progress: 'W trakcie',
     completed: 'Zakończone',
     approved: 'Zatwierdzone',
-    cancelled: 'Anulowane',
 };
 
 const STATUS_COLORS: Record<string, string> = {
     new: '#3b82f6', // blue-500
-    assigned: '#f59e0b', // amber-500
     in_progress: '#a855f7', // purple-500
     completed: '#22c55e', // green-500
     approved: '#64748b', // slate-500
-    cancelled: '#ef4444', // red-500
 };
 
 interface StatProps {

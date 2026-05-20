@@ -1,4 +1,4 @@
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import { LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown } from 'lucide-react';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
@@ -22,6 +22,7 @@ interface MediaItem {
 }
 
 interface ChecklistItem {
+    [key: string]: any;
     id: string;
     label: string;
     type: 'checkbox' | 'text' | 'number';
@@ -33,6 +34,8 @@ interface Job {
     id: number;
     status: string;
     scheduled_at: string;
+    started_at: string | null;
+    completed_at: string | null;
     report_summary: string | null;
     client: {
         name: string;
@@ -63,14 +66,20 @@ interface Props {
 
 const statusLabels: Record<string, string> = {
     new: 'Nowe',
-    assigned: 'Przypisane',
     in_progress: 'W trakcie',
     completed: 'Zakończone',
     approved: 'Zatwierdzone',
 };
 
 export default function Show({ job }: Props) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { auth } = usePage().props as any;
+    const user = auth.user;
+    const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
+
+    const { data, setData, put, processing, errors } = useForm<{
+        checklist_content: ChecklistItem[];
+        status: string;
+    }>({
         checklist_content: job.checklist?.content || [],
         status: job.status,
     });
@@ -138,7 +147,7 @@ export default function Show({ job }: Props) {
     const saveChecklist = () => {
         put(update(job.id).url, {
             preserveScroll: true,
-        });
+        } as any);
     };
 
     const onMediaDragStart = (e: React.DragEvent, id: number, collection: string) => {
@@ -307,10 +316,13 @@ export default function Show({ job }: Props) {
     };
 
     const finishJob = () => {
-        put(update(job.id).url, {
+        router.put(update(job.id).url, {
+            checklist_content: data.checklist_content,
             status: 'completed'
         }, {
             onSuccess: () => setIsFinishDialogOpen(false),
+            onFinish: () => setIsFinishDialogOpen(false),
+            preserveScroll: true,
         });
     };
 
@@ -352,7 +364,7 @@ export default function Show({ job }: Props) {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <Button variant="outline" size="icon" asChild className="cursor-pointer">
-                                <Link href={indexRoute()}>
+                                <Link href={indexRoute().url}>
                                     <LucideArrowLeft className="h-4 w-4" />
                                 </Link>
                             </Button>
@@ -362,12 +374,14 @@ export default function Show({ job }: Props) {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" asChild className="cursor-pointer">
-                                <Link href={editRoute(job.id)}>
-                                    <LucidePencil className="mr-2 h-4 w-4" />
-                                    Edytuj
-                                </Link>
-                            </Button>
+                            {isOwnerOrManager && (
+                                <Button variant="outline" size="sm" asChild className="cursor-pointer">
+                                    <Link href={editRoute(job.id).url}>
+                                        <LucidePencil className="mr-2 h-4 w-4" />
+                                        Edytuj
+                                    </Link>
+                                </Button>
+                            )}
                             <Badge variant="outline" className="text-sm px-3 py-1 uppercase tracking-wider">
                                 {statusLabels[job.status] || job.status}
                             </Badge>
@@ -399,16 +413,16 @@ export default function Show({ job }: Props) {
                                                             id={item.id}
                                                             checked={!!item.value}
                                                             onCheckedChange={(checked) => updateChecklist(index, !!checked)}
-                                                            className={`cursor-pointer ${errors[`checklist_content.${item.id}`] ? 'border-destructive' : ''}`}
+                                                            className={`cursor-pointer ${(errors as any)[`checklist_content.${index}.value`] ? 'border-destructive' : ''}`}
                                                         />
                                                         <Label htmlFor={item.id} className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
                                                             {item.label}
                                                             {item.required && <span className="text-red-500 ml-1">*</span>}
                                                         </Label>
                                                     </div>
-                                                    {errors[`checklist_content.${item.id}`] && (
+                                                    {(errors as any)[`checklist_content.${index}.value`] && (
                                                         <p className="text-xs text-destructive mt-1.5 ml-8 font-medium">
-                                                            {errors[`checklist_content.${item.id}`]}
+                                                            {(errors as any)[`checklist_content.${index}.value`]}
                                                         </p>
                                                     )}
                                                 </div>
@@ -422,7 +436,7 @@ export default function Show({ job }: Props) {
                                                         <Input
                                                             id={item.id}
                                                             type={item.type === 'number' ? 'number' : 'text'}
-                                                            className={`${item.type === 'text' ? 'pr-10' : ''} ${errors[`checklist_content.${item.id}`] ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                                            className={`${item.type === 'text' ? 'pr-10' : ''} ${(errors as any)[`checklist_content.${index}.value`] ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                                                             value={item.value || ''}
                                                             onChange={(e) => updateChecklist(index, e.target.value)}
                                                             required={item.required}
@@ -437,9 +451,9 @@ export default function Show({ job }: Props) {
                                                             />
                                                         )}
                                                     </div>
-                                                    {errors[`checklist_content.${item.id}`] && (
+                                                    {(errors as any)[`checklist_content.${index}.value`] && (
                                                         <p className="text-xs text-destructive font-medium">
-                                                            {errors[`checklist_content.${item.id}`]}
+                                                            {(errors as any)[`checklist_content.${index}.value`]}
                                                         </p>
                                                     )}
                                                 </div>
@@ -645,11 +659,39 @@ export default function Show({ job }: Props) {
                                     <div className="flex items-center gap-2">
                                         <LucideCalendar className="h-4 w-4 text-muted-foreground" />
                                         <p className="text-sm font-medium">
-                                            {job.scheduled_at.split('T')[0]}
+                                            {new Date(job.scheduled_at).toLocaleDateString('pl-PL')}
                                         </p>
                                     </div>
                                 </div>
                                 <Separator />
+                                {job.started_at && (
+                                    <>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground uppercase">Rozpoczęto</Label>
+                                            <div className="flex items-center gap-2">
+                                                <LucideCalendar className="h-4 w-4 text-muted-foreground" />
+                                                <p className="text-sm font-medium">
+                                                    {new Date(job.started_at).toLocaleString('pl-PL')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                    </>
+                                )}
+                                {job.completed_at && (
+                                    <>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground uppercase">Zakończono</Label>
+                                            <div className="flex items-center gap-2">
+                                                <LucideCalendar className="h-4 w-4 text-muted-foreground" />
+                                                <p className="text-sm font-medium">
+                                                    {new Date(job.completed_at).toLocaleString('pl-PL')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                    </>
+                                )}
                                 <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground uppercase">Technik</Label>
                                     <div className="flex items-center gap-2">
@@ -671,9 +713,9 @@ export default function Show({ job }: Props) {
                                 Zakończ zlecenie
                             </Button>
                             <Button variant="outline" className="w-full cursor-pointer" asChild>
-                                <a href={reportRoute(job.id)} target="_blank" rel="noreferrer">
+                                <a href={reportRoute(job.id).url} target="_blank" rel="noreferrer">
                                     <LucideFileText className="mr-2 h-4 w-4" />
-                                    Podgląd PDF
+                                    Podgląd raportu PDF
                                 </a>
                             </Button>
                             <Button variant="secondary" className="w-full cursor-pointer" onClick={handleSendReport}>
@@ -691,7 +733,7 @@ export default function Show({ job }: Props) {
 Show.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Zlecenia', href: indexRoute() },
+        { title: 'Zlecenia', href: indexRoute().url },
         { title: 'Szczegóły', href: '#' },
     ],
 };

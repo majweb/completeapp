@@ -95,7 +95,7 @@
         <div class="photo-grid" style="page-break-before: avoid;">
             @foreach($job->getMedia('images_before') as $media)
                 <div class="photo">
-                    <img src="{{ $media->getPath('large') }}">
+                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($media->getPath('large'))) }}">
                 </div>
             @endforeach
             <div class="clear"></div>
@@ -111,7 +111,7 @@
         <div class="photo-grid" style="page-break-before: avoid;">
             @foreach($job->getMedia('images_after') as $media)
                 <div class="photo">
-                    <img src="{{ $media->getPath('large') }}">
+                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($media->getPath('large'))) }}">
                 </div>
             @endforeach
             <div class="clear"></div>
@@ -122,7 +122,7 @@
     <div class="signature-box" style="page-break-inside: avoid;">
         <div class="label">PODPIS KLIENTA</div>
         @if($job->getFirstMedia('signature'))
-            <img src="{{ $job->getFirstMedia('signature')->getPath() }}" class="signature-image">
+            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($job->getFirstMedia('signature')->getPath())) }}" class="signature-image">
         @else
             <div style="height: 60px; border-bottom: 1px dashed #ccc; width: 200px; display: inline-block;"></div>
         @endif

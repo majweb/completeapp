@@ -11,8 +11,14 @@ trait BelongsToCompany
 {
     public static function bootBelongsToCompany(): void
     {
+        static::addGlobalScope('company', function (Builder $builder) {
+            if (auth()->hasUser()) {
+                $builder->where($builder->getQuery()->from . '.company_id', auth()->user()->company_id);
+            }
+        });
+
         static::creating(function (Model $model) {
-            if (auth()->check() && ! $model->company_id) {
+            if (auth()->hasUser() && ! $model->company_id) {
                 $model->company_id = auth()->user()->company_id;
             }
         });

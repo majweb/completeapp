@@ -1,0 +1,139 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { LucideArrowLeft, LucideSave } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import InputError from '@/components/input-error';
+
+interface Client {
+    id: number;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    notes: string | null;
+}
+
+interface Props {
+    client: Client;
+}
+
+export default function Edit({ client }: Props) {
+    const { data, setData, put, processing, errors } = useForm({
+        name: client.name,
+        email: client.email || '',
+        phone: client.phone || '',
+        address: client.address || '',
+        notes: client.notes || '',
+    });
+
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        put(route('clients.update', client.id));
+    };
+
+    return (
+        <>
+            <Head title="Edytuj Klienta" />
+            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+                <div className="flex items-center gap-4">
+                    <Button variant="outline" size="icon" asChild>
+                        <Link href={route('clients.index')}>
+                            <LucideArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <h1 className="text-2xl font-bold tracking-tight">Edytuj klienta: {client.name}</h1>
+                </div>
+
+                <div className="mx-auto w-full max-w-2xl">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Dane klienta</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={submit} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Imię i nazwisko / Nazwa firmy</Label>
+                                    <Input
+                                        id="name"
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                        placeholder="np. Jan Kowalski"
+                                        required
+                                    />
+                                    <InputError message={errors.name} />
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            value={data.email}
+                                            onChange={(e) => setData('email', e.target.value)}
+                                            placeholder="klient@example.com"
+                                        />
+                                        <InputError message={errors.email} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="phone">Telefon</Label>
+                                        <Input
+                                            id="phone"
+                                            value={data.phone}
+                                            onChange={(e) => setData('phone', e.target.value)}
+                                            placeholder="+48 123 456 789"
+                                        />
+                                        <InputError message={errors.phone} />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="address">Adres</Label>
+                                    <Input
+                                        id="address"
+                                        value={data.address}
+                                        onChange={(e) => setData('address', e.target.value)}
+                                        placeholder="ul. Przykładowa 1, 00-000 Miasto"
+                                    />
+                                    <InputError message={errors.address} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="notes">Notatki</Label>
+                                    <textarea
+                                        id="notes"
+                                        className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={data.notes}
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                        placeholder="Dodatkowe informacje o kliencie..."
+                                    />
+                                    <InputError message={errors.notes} />
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-4">
+                                    <Button variant="outline" type="button" asChild disabled={processing}>
+                                        <Link href={route('clients.index')}>Anuluj</Link>
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        <LucideSave className="mr-2 h-4 w-4" />
+                                        Zapisz zmiany
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </>
+    );
+}
+
+Edit.layout = {
+    breadcrumbs: [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Klienci', href: '/clients' },
+        { title: 'Edytuj', href: '#' },
+    ],
+};

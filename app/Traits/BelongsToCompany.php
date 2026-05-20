@@ -16,15 +16,6 @@ trait BelongsToCompany
                 $model->company_id = auth()->user()->company_id;
             }
         });
-
-        static::addGlobalScope('company', function (Builder $builder) {
-            if (auth()->hasUser()) {
-                $user = auth()->user();
-                if ($user && $user->company_id) {
-                    $builder->where($builder->getQuery()->from.'.company_id', $user->company_id);
-                }
-            }
-        });
     }
 
     public function company(): BelongsTo

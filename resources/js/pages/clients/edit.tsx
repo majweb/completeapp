@@ -1,10 +1,12 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { LucideArrowLeft, LucideSave } from 'lucide-react';
+
+import { index, update } from '@/actions/App/Http/Controllers/ClientController';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import InputError from '@/components/input-error';
 
 interface Client {
     id: number;
@@ -30,7 +32,7 @@ export default function Edit({ client }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('clients.update', client.id));
+        put(update.url(client.id));
     };
 
     return (
@@ -38,15 +40,15 @@ export default function Edit({ client }: Props) {
             <Head title="Edytuj Klienta" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" asChild>
-                        <Link href={route('clients.index')}>
+                    <Button variant="outline" size="icon" asChild className="cursor-pointer">
+                        <Link href={index.url()}>
                             <LucideArrowLeft className="h-4 w-4" />
                         </Link>
                     </Button>
                     <h1 className="text-2xl font-bold tracking-tight">Edytuj klienta: {client.name}</h1>
                 </div>
 
-                <div className="mx-auto w-full max-w-2xl">
+                <div className="w-full">
                     <Card>
                         <CardHeader>
                             <CardTitle>Dane klienta</CardTitle>
@@ -113,10 +115,10 @@ export default function Edit({ client }: Props) {
                                 </div>
 
                                 <div className="flex justify-end gap-2 pt-4">
-                                    <Button variant="outline" type="button" asChild disabled={processing}>
-                                        <Link href={route('clients.index')}>Anuluj</Link>
+                                    <Button variant="outline" type="button" asChild disabled={processing} className="cursor-pointer">
+                                        <Link href={index.url()}>Anuluj</Link>
                                     </Button>
-                                    <Button type="submit" disabled={processing}>
+                                    <Button type="submit" disabled={processing} className="cursor-pointer">
                                         <LucideSave className="mr-2 h-4 w-4" />
                                         Zapisz zmiany
                                     </Button>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
 class ClientController extends Controller
@@ -13,8 +14,12 @@ class ClientController extends Controller
      */
     public function index()
     {
+        Gate::authorize('viewAny', Client::class);
+
         return Inertia::render('clients/index', [
-            'clients' => Client::latest()->get(),
+            'clients' => auth()->user()->clients()
+                ->latest()
+                ->paginate(6),
         ]);
     }
 
@@ -23,6 +28,8 @@ class ClientController extends Controller
      */
     public function create()
     {
+        Gate::authorize('create', Client::class);
+
         return Inertia::render('clients/create');
     }
 
@@ -31,9 +38,11 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
+        Gate::authorize('create', Client::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
+            'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
@@ -41,8 +50,9 @@ class ClientController extends Controller
 
         Client::create($validated);
 
-        return redirect()->route('clients.index')
-            ->with('success', 'Klient został dodany.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Klient został dodany.']);
+
+        return redirect()->route('clients.index');
     }
 
     /**
@@ -50,6 +60,8 @@ class ClientController extends Controller
      */
     public function show(Client $client)
     {
+        Gate::authorize('view', $client);
+
         return Inertia::render('clients/show', [
             'client' => $client,
         ]);
@@ -60,6 +72,8 @@ class ClientController extends Controller
      */
     public function edit(Client $client)
     {
+        Gate::authorize('update', $client);
+
         return Inertia::render('clients/edit', [
             'client' => $client,
         ]);
@@ -70,6 +84,8 @@ class ClientController extends Controller
      */
     public function update(Request $request, Client $client)
     {
+        Gate::authorize('update', $client);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
@@ -80,8 +96,9 @@ class ClientController extends Controller
 
         $client->update($validated);
 
-        return redirect()->route('clients.index')
-            ->with('success', 'Dane klienta zostały zaktualizowane.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Dane klienta zostały zaktualizowane.']);
+
+        return redirect()->route('clients.index');
     }
 
     /**
@@ -89,9 +106,12 @@ class ClientController extends Controller
      */
     public function destroy(Client $client)
     {
+        Gate::authorize('delete', $client);
+
         $client->delete();
 
-        return redirect()->route('clients.index')
-            ->with('success', 'Klient został usunięty.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Klient został usunięty.']);
+
+        return redirect()->route('clients.index');
     }
 }

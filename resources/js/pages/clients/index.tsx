@@ -1,8 +1,18 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { LucidePencil, LucidePlus, LucideTrash2, LucideUser } from 'lucide-react';
+import { useState } from 'react';
 
+import { create, destroy, edit } from '@/actions/App/Http/Controllers/ClientController';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Client {
     id: number;
@@ -12,16 +22,42 @@ interface Client {
     address: string | null;
 }
 
+interface PaginationLinks {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedClients {
+    data: Client[];
+    links: PaginationLinks[];
+    current_page: number;
+    last_page: number;
+    total: number;
+}
+
 interface Props {
-    clients: Client[];
+    clients: PaginatedClients;
 }
 
 export default function Index({ clients }: Props) {
-    const { delete: destroy } = useForm();
+    const { delete: destroyClient } = useForm();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [clientToDelete, setClientToDelete] = useState<number | null>(null);
 
-    const handleDelete = (id: number) => {
-        if (confirm('Czy na pewno chcesz usunąć tego klienta?')) {
-            destroy(route('clients.destroy', id));
+    const handleDeleteClick = (id: number) => {
+        setClientToDelete(id);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (clientToDelete) {
+            destroyClient(destroy.url(clientToDelete), {
+                onSuccess: () => {
+                    setIsDeleteDialogOpen(false);
+                    setClientToDelete(null);
+                },
+            });
         }
     };
 
@@ -31,8 +67,8 @@ export default function Index({ clients }: Props) {
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Klienci</h1>
-                    <Button asChild>
-                        <Link href={route('clients.create')}>
+                    <Button asChild className="cursor-pointer">
+                        <Link href={create.url()}>
                             <LucidePlus className="mr-2 h-4 w-4" />
                             Dodaj klienta
                         </Link>
@@ -40,7 +76,7 @@ export default function Index({ clients }: Props) {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {clients.map((client) => (
+                    {clients.data.map((client) => (
                         <Card key={client.id} className="overflow-hidden">
                             <CardHeader className="flex flex-row items-center space-y-0 pb-2">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
@@ -59,13 +95,18 @@ export default function Index({ clients }: Props) {
                                     {client.address && <p className="truncate">Adres: {client.address}</p>}
                                 </div>
                                 <div className="mt-4 flex justify-end gap-2">
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link href={route('clients.edit', client.id)}>
+                                    <Button variant="outline" size="sm" asChild className="cursor-pointer">
+                                        <Link href={edit.url(client.id)}>
                                             <LucidePencil className="mr-2 h-4 w-4" />
                                             Edytuj
                                         </Link>
                                     </Button>
-                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(client.id)}>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => handleDeleteClick(client.id)}
+                                        className="cursor-pointer"
+                                    >
                                         <LucideTrash2 className="mr-2 h-4 w-4" />
                                         Usuń
                                     </Button>
@@ -74,16 +115,62 @@ export default function Index({ clients }: Props) {
                         </Card>
                     ))}
 
-                    {clients.length === 0 && (
+                    {clients.data.length === 0 && (
                         <div className="col-span-full flex h-40 flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
                             <p>Brak klientów w bazie.</p>
-                            <Button variant="link" asChild>
-                                <Link href={route('clients.create')}>Dodaj pierwszego klienta</Link>
+                            <Button variant="link" asChild className="cursor-pointer">
+                                <Link href={create.url()}>Dodaj pierwszego klienta</Link>
                             </Button>
                         </div>
                     )}
                 </div>
+
+                {clients.total > 0 && clients.last_page > 1 && (
+                    <div className="mt-6 flex flex-wrap justify-center gap-1">
+                        {clients.links.map((link, i) => {
+                            if (link.url === null) {
+                                return (
+                                    <span
+                                        key={i}
+                                        className="rounded-md border px-3 py-1 text-sm text-muted-foreground"
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                    />
+                                );
+                            }
+
+                            return (
+                                <Link
+                                    key={i}
+                                    href={link.url}
+                                    className={`rounded-md border px-3 py-1 text-sm transition-colors hover:bg-muted ${
+                                        link.active ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-background'
+                                    }`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                />
+                            );
+                        })}
+                    </div>
+                )}
             </div>
+
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Usuń klienta</DialogTitle>
+                        <DialogDescription>
+                            Czy na pewno chcesz usunąć tego klienta? Tej operacji nie można cofnąć.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="cursor-pointer">
+                            Anuluj
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete} className="cursor-pointer">
+                            Usuń
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

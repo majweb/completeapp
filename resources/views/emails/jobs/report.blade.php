@@ -7,7 +7,7 @@ Przesyłamy raport z wykonanego zlecenia: **{{ $job->template->name ?? 'Zlecenie
 
 **Szczegóły:**
 - **Klient:** {{ $job->client->name }}
-- **Data wykonania:** {{ $job->completed_at?->format('d.m.Y H:i') }}
+- **Data wykonania:** {{ $job->completed_at ? $job->completed_at->format('d.m.Y H:i') : '-' }}
 
 Pełny raport w formacie PDF znajduje się w załączniku do tej wiadomości.
 

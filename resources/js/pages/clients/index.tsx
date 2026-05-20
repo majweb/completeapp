@@ -2,7 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { LucidePencil, LucidePlus, LucideTrash2, LucideUser } from 'lucide-react';
 import { useState } from 'react';
 
-import { create, destroy, edit } from '@/actions/App/Http/Controllers/ClientController';
+import { create, destroy, edit, index } from '@/actions/App/Http/Controllers/ClientController';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -183,7 +183,7 @@ Index.layout = {
         },
         {
             title: 'Klienci',
-            href: '/clients',
+            href: index.url(),
         },
     ],
 };

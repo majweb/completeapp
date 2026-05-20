@@ -10,6 +10,8 @@ use App\Traits\BelongsToCompany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
 class Job extends Model implements HasMedia
 {
     use InteractsWithMedia, BelongsToCompany;
@@ -61,5 +63,18 @@ class Job extends Model implements HasMedia
         $this->addMediaCollection('images_after');
         $this->addMediaCollection('problems');
         $this->addMediaCollection('signature')->singleFile();
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(300)
+            ->height(300)
+            ->nonQueued();
+
+        $this->addMediaConversion('large')
+            ->width(1200)
+            ->height(1200)
+            ->nonQueued();
     }
 }

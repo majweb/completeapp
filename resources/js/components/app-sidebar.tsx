@@ -1,7 +1,8 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, ClipboardList, FileText, HardHat } from 'lucide-react';
 
-import { index } from '@/actions/App/Http/Controllers/ClientController';
+import { index as clientsIndex } from '@/actions/App/Http/Controllers/ClientController';
+import { index as techniciansIndex } from '@/actions/App/Http/Controllers/TechnicianController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -16,6 +17,9 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as jobTemplatesIndex } from '@/routes/job-templates';
+import { index as jobsIndex } from '@/routes/jobs';
+import { index as techniciansIndexRoute } from '@/routes/technicians';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -25,8 +29,23 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Zlecenia',
+        href: jobsIndex(),
+        icon: ClipboardList,
+    },
+    {
+        title: 'Szablony zleceń',
+        href: jobTemplatesIndex(),
+        icon: FileText,
+    },
+    {
+        title: 'Ekipa (Technicy)',
+        href: techniciansIndexRoute(),
+        icon: HardHat,
+    },
+    {
         title: 'Klienci',
-        href: index.url(),
+        href: clientsIndex.url(),
         icon: Users,
     },
 ];

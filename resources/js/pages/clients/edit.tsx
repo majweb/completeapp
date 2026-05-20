@@ -135,7 +135,7 @@ export default function Edit({ client }: Props) {
 Edit.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Klienci', href: '/clients' },
+        { title: 'Klienci', href: index.url() },
         { title: 'Edytuj', href: '#' },
     ],
 };

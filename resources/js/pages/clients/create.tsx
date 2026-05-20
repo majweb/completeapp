@@ -121,7 +121,7 @@ export default function Create() {
 Create.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Klienci', href: '/clients' },
-        { title: 'Dodaj', href: '/clients/create' },
+        { title: 'Klienci', href: index.url() },
+        { title: 'Dodaj', href: '#' },
     ],
 };

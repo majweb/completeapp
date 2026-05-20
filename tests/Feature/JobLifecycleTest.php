@@ -1,87 +1,229 @@
 <?php
 
-use App\Models\Company;
-use App\Models\User;
+use App\Enums\JobStatus;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Job;
 use App\Models\JobTemplate;
-use App\Enums\JobStatus;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
-test('można stworzyć zlecenie z szablonu', function () {
-    $company = Company::create(['name' => 'Test', 'slug' => 'test']);
-    $user = User::factory()->create(['company_id' => $company->id]);
-    $client = Client::create(['name' => 'Klient Testowy', 'company_id' => $company->id]);
+beforeEach(function () {
+    $this->company = Company::create(['name' => 'Test Company', 'slug' => 'test-company']);
+    $this->user = User::factory()->create(['company_id' => $this->company->id, 'role' => 'owner']);
+    $this->actingAs($this->user);
 
-    $template = JobTemplate::create([
-        'name' => 'Przegląd Klimatyzacji',
-        'company_id' => $company->id,
+    $this->client = Client::create(['name' => 'Test Client', 'company_id' => $this->company->id]);
+    $this->template = JobTemplate::create([
+        'name' => 'Test Template',
+        'company_id' => $this->company->id,
         'structure' => [
-            ['id' => 'field_1', 'type' => 'checkbox', 'label' => 'Czy filtr wyczyszczony?'],
-            ['id' => 'field_2', 'type' => 'text', 'label' => 'Uwagi technika'],
-        ]
+            ['id' => 'item_1', 'label' => 'Task 1', 'type' => 'checkbox', 'required' => true],
+        ],
     ]);
-
-    $this->actingAs($user);
-
-    $job = Job::create([
-        'client_id' => $client->id,
-        'template_id' => $template->id,
-        'status' => JobStatus::NEW,
-    ]);
-
-    expect($job->client_id)->toBe($client->id);
-    expect($job->status)->toBe(JobStatus::NEW);
-    expect($job->template->name)->toBe('Przegląd Klimatyzacji');
 });
 
-test('można przypisać technika do zlecenia', function () {
-    $company = Company::create(['name' => 'Test', 'slug' => 'test']);
-    $manager = User::factory()->create(['company_id' => $company->id, 'role' => 'manager']);
-    $technician = User::factory()->create(['company_id' => $company->id, 'role' => 'technician']);
-    $client = Client::create(['name' => 'Klient', 'company_id' => $company->id]);
-
-    $job = Job::create([
-        'client_id' => $client->id,
-        'company_id' => $company->id,
+test('can list jobs', function () {
+    Job::create([
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
         'status' => JobStatus::NEW,
+        'scheduled_at' => now(),
     ]);
 
-    $this->actingAs($manager);
+    $response = $this->get(route('jobs.index'));
 
-    $job->update([
-        'assigned_to' => $technician->id,
-        'status' => JobStatus::ASSIGNED,
-    ]);
-
-    expect($job->assigned_to)->toBe($technician->id);
-    expect($job->status)->toBe(JobStatus::ASSIGNED);
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('jobs/index', true)
+        ->has('jobs', 1)
+    );
 });
 
-test('można wygenerować checklistę z szablonu', function () {
-    $company = Company::create(['name' => 'Test', 'slug' => 'test']);
-    $user = User::factory()->create(['company_id' => $company->id]);
-    $client = Client::create(['name' => 'Klient', 'company_id' => $company->id]);
-
-    $template = JobTemplate::create([
-        'name' => 'Template',
-        'company_id' => $company->id,
-        'structure' => [
-            ['id' => 'f1', 'type' => 'checkbox', 'label' => 'Label 1'],
-        ]
+test('can create job and generates checklist', function () {
+    $response = $this->post(route('jobs.store'), [
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'scheduled_at' => now()->addDay()->format('Y-m-d'),
     ]);
 
+    $response->assertRedirect(route('jobs.index'));
+    $response->assertSessionHas('inertia.flash_data', fn ($data) => $data['toast']['message'] === 'Zlecenie zostało utworzone.');
+
+    $job = Job::first();
+    expect($job->client_id)->toBe($this->client->id);
+    expect($job->checklist)->not->toBeNull();
+    expect($job->checklist->content)->toHaveCount(1);
+});
+
+test('can show job details', function () {
     $job = Job::create([
-        'client_id' => $client->id,
-        'template_id' => $template->id,
-        'company_id' => $company->id,
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => JobStatus::NEW,
+        'scheduled_at' => now(),
+    ]);
+    $this->template->generateChecklist($job);
+
+    $response = $this->get(route('jobs.show', $job));
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('jobs/show', true)
+        ->has('job.checklist')
+    );
+});
+
+test('can upload media to job', function () {
+    Storage::fake('public');
+    $job = Job::create([
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => JobStatus::NEW,
+        'scheduled_at' => now(),
     ]);
 
-    $checklist = $template->generateChecklist($job);
+    $file = UploadedFile::fake()->image('before.jpg');
 
-    expect($checklist->job_id)->toBe($job->id);
-    expect($checklist->content[0]['label'])->toBe('Label 1');
-    expect(array_key_exists('value', $checklist->content[0]))->toBeTrue();
+    $response = $this->post(route('jobs.uploadMedia', $job), [
+        'image' => $file,
+        'collection' => 'images_before',
+    ]);
+
+    $response->assertRedirect();
+    expect($job->getMedia('images_before'))->toHaveCount(1);
+});
+
+test('can save signature to job', function () {
+    $job = Job::create([
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => JobStatus::NEW,
+        'scheduled_at' => now(),
+    ]);
+
+    $signatureData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+    $response = $this->post(route('jobs.saveSignature', $job), [
+        'signature' => $signatureData,
+    ]);
+
+    $response->assertRedirect();
+    expect($job->getMedia('signature'))->toHaveCount(1);
+});
+
+test('can download job report', function () {
+    $job = Job::create([
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => \App\Enums\JobStatus::NEW,
+        'scheduled_at' => now(),
+    ]);
+    $this->template->generateChecklist($job);
+
+    $response = $this->get(route('jobs.report', $job));
+
+    $response->assertStatus(200);
+    $response->assertHeader('content-type', 'application/pdf');
+});
+
+test('can delete media from job', function () {
+    $job = Job::create([
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => JobStatus::NEW,
+        'scheduled_at' => now(),
+    ]);
+
+    $file = UploadedFile::fake()->image('photo.jpg');
+    $media = $job->addMedia($file)->toMediaCollection('images_before');
+
+    $response = $this->delete(route('jobs.deleteMedia', [$job, $media]));
+
+    $response->assertRedirect();
+    expect($job->getMedia('images_before'))->toHaveCount(0);
+});
+
+test('can reorder media in job', function () {
+    $job = Job::create([
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => JobStatus::NEW,
+        'scheduled_at' => now(),
+    ]);
+
+    $file1 = UploadedFile::fake()->image('photo1.jpg');
+    $file2 = UploadedFile::fake()->image('photo2.jpg');
+
+    $m1 = $job->addMedia($file1)->toMediaCollection('images_before');
+    $m2 = $job->addMedia($file2)->toMediaCollection('images_before');
+
+    $response = $this->post(route('jobs.reorderMedia', $job), [
+        'media_id' => $m2->id,
+        'direction' => 'up',
+    ]);
+
+    $response->assertRedirect();
+
+    // Refresh media
+    $media = $job->fresh()->getMedia('images_before');
+    expect($media[0]->id)->toBe($m2->id);
+});
+
+test('can send job report', function () {
+    $job = Job::create([
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => JobStatus::NEW,
+        'scheduled_at' => now(),
+    ]);
+
+    $response = $this->post(route('jobs.sendReport', $job));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('inertia.flash_data', fn ($data) => $data['toast']['message'] === 'Raport został wysłany (symulacja).');
+});
+
+test('cannot see jobs from another company', function () {
+    $otherCompany = Company::create(['name' => 'Other Company', 'slug' => 'other-company']);
+    $otherClient = Client::create(['name' => 'Other Client', 'company_id' => $otherCompany->id]);
+    $otherJob = Job::create([
+        'company_id' => $otherCompany->id,
+        'client_id' => $otherClient->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => JobStatus::NEW,
+        'scheduled_at' => now(),
+    ]);
+
+    $response = $this->get(route('jobs.index'));
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('jobs/index', true)
+        ->has('jobs', 0)
+    );
+
+    $response = $this->get(route('jobs.show', $otherJob));
+    $response->assertStatus(403);
 });

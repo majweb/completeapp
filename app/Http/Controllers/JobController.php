@@ -95,7 +95,12 @@ class JobController extends Controller
             'client_id' => 'required|exists:clients,id',
             'template_id' => 'required|exists:job_templates,id',
             'assigned_to' => 'required|exists:users,id',
-            'scheduled_at' => 'required',
+            'scheduled_at' => 'required|date|after_or_equal:today',
+        ], [], [
+            'client_id' => 'klient',
+            'template_id' => 'szablon',
+            'assigned_to' => 'technik',
+            'scheduled_at' => 'data i godzina wykonania',
         ]);
 
         return DB::transaction(function () use ($validated) {
@@ -116,9 +121,10 @@ class JobController extends Controller
     {
         Gate::authorize('view', $job);
 
-        $job->load(['client', 'technician', 'template', 'checklist']);
+        $job->load(['client', 'technician', 'template', 'checklist', 'auditLogs.user']);
 
         return Inertia::render('jobs/show', [
+            'twilio_enabled' => config('services.twilio.enabled'),
             'job' => array_merge($job->toArray(), [
                 'media' => [
                     'images_before' => $job->getMedia('images_before')->map(fn ($m) => [
@@ -166,13 +172,18 @@ class JobController extends Controller
         $validated = $request->validate([
             'client_id' => 'sometimes|exists:clients,id',
             'assigned_to' => 'sometimes|exists:users,id',
-            'scheduled_at' => 'sometimes',
+            'scheduled_at' => 'sometimes|date|after_or_equal:today',
             'started_at' => 'nullable|date',
             'completed_at' => 'nullable|date|after_or_equal:started_at',
             'status' => 'sometimes|string',
             'checklist_content' => 'sometimes|array',
-        ], [
-            'completed_at.after_or_equal' => 'Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.',
+            'send_sms' => 'sometimes|boolean',
+        ], [], [
+            'client_id' => 'klient',
+            'assigned_to' => 'technik',
+            'scheduled_at' => 'zaplanowana data i godzina',
+            'started_at' => 'data rozpoczęcia',
+            'completed_at' => 'data zakończenia',
         ]);
 
         if ($request->filled('started_at') && ($request->status ?? $job->status->value) === 'new') {
@@ -211,7 +222,16 @@ class JobController extends Controller
             }
         }
 
+        $wasCompleted = $job->status->value !== 'completed' && ($validated['status'] ?? $job->status->value) === 'completed';
+
         $job->update($validated);
+
+        if ($wasCompleted && $request->boolean('send_sms') && $job->client->phone) {
+            app(\App\Services\SMSService::class)->send(
+                $job->client->phone,
+                "Twoje zlecenie #{$job->id} zostało zakończone. Dziękujemy!"
+            );
+        }
 
         if ($request->wantsJson() || $request->header('X-Inertia')) {
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Zmiany zostały zapisane.']);

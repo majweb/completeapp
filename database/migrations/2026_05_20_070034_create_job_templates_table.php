@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->json('structure'); // Definicja pól
-            $table->integer('version')->default(1);
+            $table->string('version')->default('1.0');
             $table->timestamps();
         });
     }

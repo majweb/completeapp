@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Enums\JobStatus;
 use App\Traits\BelongsToCompany;
+use App\Traits\Auditable;
 
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -15,7 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Job extends Model implements HasMedia
 {
-    use InteractsWithMedia, BelongsToCompany, HasFactory;
+    use InteractsWithMedia, BelongsToCompany, Auditable, HasFactory;
 
     protected $table = 'work_jobs';
 

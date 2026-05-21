@@ -1,5 +1,5 @@
 import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
-import { LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw } from 'lucide-react';
+import { Bell, Briefcase, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock, MapPin } from 'lucide-react';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
 
@@ -30,6 +30,17 @@ interface ChecklistItem {
     required?: boolean;
 }
 
+interface AuditLog {
+    id: number;
+    event: string;
+    old_values: any;
+    new_values: any;
+    created_at: string;
+    user: {
+        name: string;
+    } | null;
+}
+
 interface Job {
     id: number;
     status: string;
@@ -58,10 +69,12 @@ interface Job {
         problems: MediaItem[];
         signature: string | null;
     };
+    audit_logs: AuditLog[];
 }
 
 interface Props {
     job: Job;
+    twilio_enabled: boolean;
 }
 
 const statusLabels: Record<string, string> = {
@@ -71,7 +84,7 @@ const statusLabels: Record<string, string> = {
     approved: 'Zatwierdzone',
 };
 
-export default function Show({ job }: Props) {
+export default function Show({ job, twilio_enabled }: Props) {
     const { auth, features } = usePage().props as any;
     const user = auth.user;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
@@ -80,9 +93,11 @@ export default function Show({ job }: Props) {
     const { data, setData, put, processing, errors } = useForm<{
         checklist_content: ChecklistItem[];
         status: string;
+        send_sms: boolean;
     }>({
         checklist_content: job.checklist?.content || [],
         status: job.status,
+        send_sms: true,
     });
 
     const [isSignatureOpen, setIsSignatureOpen] = useState(false);
@@ -325,7 +340,8 @@ export default function Show({ job }: Props) {
     const finishJob = () => {
         router.put(update(job.id).url, {
             checklist_content: data.checklist_content,
-            status: 'completed'
+            status: 'completed',
+            send_sms: data.send_sms,
         }, {
             onSuccess: () => setIsFinishDialogOpen(false),
             onError: () => {
@@ -362,6 +378,21 @@ export default function Show({ job }: Props) {
                             Zlecenie zostanie oznaczone jako zakończone. Upewnij się, że wszystkie dane i zdjęcia zostały dodane.
                         </DialogDescription>
                     </DialogHeader>
+                    {job.client.phone && twilio_enabled && (
+                        <div className="flex items-center space-x-2 py-4">
+                            <Checkbox
+                                id="send_sms"
+                                checked={data.send_sms}
+                                onCheckedChange={(checked) => setData('send_sms', !!checked)}
+                            />
+                            <Label
+                                htmlFor="send_sms"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                                Wyślij powiadomienie SMS do klienta ({job.client.phone})
+                            </Label>
+                        </div>
+                    )}
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsFinishDialogOpen(false)} className="cursor-pointer">Anuluj</Button>
                         <Button className="bg-green-600 hover:bg-green-700 cursor-pointer" onClick={finishJob}>Zakończ zlecenie</Button>
@@ -391,11 +422,34 @@ export default function Show({ job }: Props) {
                                     </Link>
                                 </Button>
                             )}
-                            <Badge variant="outline" className="text-sm px-3 py-1 uppercase tracking-wider">
+                            <Badge variant="outline" className="text-sm px-3 py-1 uppercase tracking-wider bg-background">
                                 {statusLabels[job.status] || job.status}
                             </Badge>
                         </div>
                     </div>
+
+                {job.status === 'new' && (
+                    <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-background border border-primary/20 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm mb-2">
+                        <div className="flex items-center gap-5">
+                            <div className="bg-primary p-4 rounded-2xl shadow-lg rotate-3">
+                                <LucideSparkles className="h-8 w-8 text-primary-foreground" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-foreground">Gotowy do rozpoczęcia?</h3>
+                                <p className="text-muted-foreground max-w-md">Rozpocznij zlecenie, aby odblokować checklistę, dodać dokumentację fotograficzną i zarejestrować czas pracy.</p>
+                            </div>
+                        </div>
+                        <Button
+                            onClick={() => router.put(update(job.id).url, { status: 'in_progress' })}
+                            size="lg"
+                            className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-16 px-10 text-lg rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group"
+                        >
+                            <LucidePlusCircle className="mr-3 h-6 w-6 group-hover:rotate-90 transition-transform duration-300" />
+                            ROZPOCZNIJ PRACĘ
+                            <LucideArrowRight className="ml-2 h-5 w-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                        </Button>
+                    </div>
+                )}
 
                 <div className="grid gap-6 md:grid-cols-3">
                     <div className="md:col-span-2 space-y-6">
@@ -406,31 +460,51 @@ export default function Show({ job }: Props) {
                                     <LucideCheckCircle2 className="h-5 w-5 text-primary" />
                                     Checklista
                                 </CardTitle>
-                                <Button size="sm" variant="outline" onClick={saveChecklist} disabled={processing} className="cursor-pointer">
+                                <Button size="sm" variant="outline" onClick={saveChecklist} disabled={processing || !job.started_at} className="cursor-pointer">
                                     <LucideSave className="mr-2 h-4 w-4" />
                                     Zapisz postęp
                                 </Button>
                             </CardHeader>
-                            <CardContent className="space-y-6">
+                            <CardContent className="space-y-6 relative">
+                                {!job.started_at && (
+                                    <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                        <div className="bg-card border shadow-sm p-4 rounded-lg text-center max-w-xs mx-4">
+                                            <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                            <p className="text-sm font-medium text-muted-foreground">
+                                                Rozpocznij zlecenie powyżej, aby móc wypełniać checklistę.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                                 {data.checklist_content.map((item, index) => (
                                     <div key={item.id} className="flex flex-col gap-2">
                                         <div className="flex items-start gap-3">
                                             {item.type === 'checkbox' ? (
                                                 <div className="w-full">
-                                                    <div className="flex items-center gap-3">
+                                                    <div
+                                                        className={`flex items-center gap-3 py-2 transition-colors ${!job.started_at ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                        onClick={() => job.started_at && updateChecklist(index, !item.value)}
+                                                    >
                                                         <Checkbox
                                                             id={item.id}
                                                             checked={!!item.value}
-                                                            onCheckedChange={(checked) => updateChecklist(index, !!checked)}
-                                                            className={`cursor-pointer ${(errors as any)[`checklist_content.${index}.value`] ? 'border-destructive' : ''}`}
+                                                            onCheckedChange={(checked) => job.started_at && updateChecklist(index, !!checked)}
+                                                            className={`${(errors as any)[`checklist_content.${index}.value`] ? 'border-destructive' : ''}`}
+                                                            disabled={!job.started_at}
                                                         />
-                                                        <Label htmlFor={item.id} className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
-                                                            {item.label}
-                                                            {item.required && <span className="text-red-500 ml-1">*</span>}
-                                                        </Label>
+                                                        <div className="flex flex-1 items-center justify-between">
+                                                            <Label
+                                                                htmlFor={item.id}
+                                                                className={`text-sm font-medium leading-none ${!job.started_at ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                                            >
+                                                                {item.label}
+                                                                {item.required && <span className="text-red-500 ml-1">*</span>}
+                                                            </Label>
+                                                            {!!item.value && <LucideCheck className="h-4 w-4 text-green-600" />}
+                                                        </div>
                                                     </div>
                                                     {(errors as any)[`checklist_content.${index}.value`] && (
-                                                        <p className="text-xs text-destructive mt-1.5 ml-8 font-medium">
+                                                        <p className="text-xs text-destructive mt-1.5 ml-11 font-medium">
                                                             {(errors as any)[`checklist_content.${index}.value`]}
                                                         </p>
                                                     )}
@@ -445,18 +519,25 @@ export default function Show({ job }: Props) {
                                                         <Input
                                                             id={item.id}
                                                             type={item.type === 'number' ? 'number' : 'text'}
-                                                            className={`${item.type === 'text' ? 'pr-10' : ''} ${(errors as any)[`checklist_content.${index}.value`] ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                                            className={`${item.type === 'text' ? 'pr-12' : ''} ${(errors as any)[`checklist_content.${index}.value`] ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                                                             value={item.value || ''}
                                                             onChange={(e) => updateChecklist(index, e.target.value)}
                                                             required={item.required}
+                                                            placeholder={item.type === 'number' ? '0' : 'Wpisz treść...'}
+                                                            disabled={!job.started_at}
                                                         />
                                                         {item.type === 'text' && (
                                                             <VoiceInput
                                                                 onResult={(text) => {
+                                                                    if (!job.started_at) {
+                                                                        return;
+                                                                    }
+
                                                                     const val = item.value || '';
                                                                     updateChecklist(index, val + (val ? ' ' : '') + text);
                                                                 }}
-                                                                className="absolute right-1 top-1/2 -translate-y-1/2"
+                                                                className={`absolute right-1 top-1/2 -translate-y-1/2 ${!job.started_at ? 'pointer-events-none opacity-50' : ''}`}
+                                                                disabled={!job.started_at}
                                                             />
                                                         )}
                                                     </div>
@@ -690,6 +771,123 @@ export default function Show({ job }: Props) {
                                 </CardContent>
                             </Card>
                         )}
+
+                        {/* History Section */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <LucideFileText className="h-5 w-5 text-muted-foreground" />
+                                    Historia zmian
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {job.audit_logs.length > 0 ? (
+                                        job.audit_logs.map((log) => {
+                                            const formatValue = (key: string, value: any) => {
+                                                if (value === null || value === undefined) {
+                                                    return <span className="text-muted-foreground italic">brak</span>;
+                                                }
+
+                                                if (key === 'status') {
+                                                    const statusLabelsMap: Record<string, string> = {
+                                                        'new': 'Nowe',
+                                                        'in_progress': 'W trakcie',
+                                                        'completed': 'Zakończone',
+                                                        'approved': 'Zatwierdzone'
+                                                    };
+
+                                                    return <Badge variant="outline" className="text-[10px] py-0 h-4">{statusLabelsMap[value] || value}</Badge>;
+                                                }
+
+                                                if (key.endsWith('_at') && typeof value === 'string') {
+                                                    try {
+                                                        return new Date(value).toLocaleString('pl-PL', {
+                                                            year: 'numeric',
+                                                            month: '2-digit',
+                                                            day: '2-digit',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        });
+                                                    } catch {
+                                                        return value;
+                                                    }
+                                                }
+
+                                                return typeof value === 'object' ? JSON.stringify(value) : String(value);
+                                            };
+
+                                            const getFieldLabel = (key: string) => {
+                                                const fieldLabels: Record<string, string> = {
+                                                    'status': 'Status',
+                                                    'assigned_to': 'Technik',
+                                                    'client_id': 'Klient',
+                                                    'template_id': 'Szablon',
+                                                    'scheduled_at': 'Planowana data',
+                                                    'started_at': 'Data rozpoczęcia',
+                                                    'completed_at': 'Data zakończenia',
+                                                    'report_summary': 'Podsumowanie'
+                                                };
+
+                                                return fieldLabels[key] || key;
+                                            };
+
+                                            return (
+                                                <div key={log.id} className="text-sm border-l-2 border-muted pl-4 py-2 relative group hover:bg-muted/30 transition-colors rounded-r-md">
+                                                    <div className="absolute -left-[9px] top-3 h-4 w-4 rounded-full border-2 border-background bg-muted group-hover:bg-primary/30 transition-colors" />
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                                                            {log.event === 'created' ? (
+                                                                <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                                                                    <LucidePlusCircle className="h-3 w-3" /> Utworzono
+                                                                </span>
+                                                            ) : log.event === 'updated' ? (
+                                                                <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                                                    <LucidePencil className="h-3 w-3" /> Zaktualizowano
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                                    <LucideTrash2 className="h-3 w-3" /> Usunięto
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                        <span className="text-[10px] font-medium text-muted-foreground/70">
+                                                            {new Date(log.created_at).toLocaleString('pl-PL')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-xs mb-2">
+                                                        <span className="text-muted-foreground font-normal">Przez: </span>
+                                                        <span className="font-semibold text-foreground">{log.user?.name || 'System'}</span>
+                                                    </div>
+                                                    {log.event === 'updated' && log.new_values && (
+                                                        <div className="mt-2 space-y-1.5 bg-background/50 p-2 rounded border border-muted/50">
+                                                            {Object.keys(log.new_values).map((key) => (
+                                                                <div key={key} className="text-[11px] grid grid-cols-[80px_1fr] gap-2 items-baseline">
+                                                                    <span className="font-medium text-muted-foreground truncate" title={getFieldLabel(key)}>
+                                                                        {getFieldLabel(key)}:
+                                                                    </span>
+                                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                                        <span className="text-muted-foreground line-through opacity-70">
+                                                                            {formatValue(key, log.old_values?.[key])}
+                                                                        </span>
+                                                                        <LucideArrowRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                                                                        <span className="font-medium text-foreground">
+                                                                            {formatValue(key, log.new_values[key])}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground text-center py-2">Brak wpisów w historii.</p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
 
                     <div className="space-y-6">

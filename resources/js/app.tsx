@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'MajsterPlus';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
@@ -38,3 +38,12 @@ createInertiaApp({
 
 // This will set light / dark mode on load...
 initializeTheme();
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+            console.error('ServiceWorker registration failed: ', err);
+        });
+    });
+}

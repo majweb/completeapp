@@ -68,7 +68,7 @@
                     <div class="value">{{ $job->template->name }}</div>
                     <table width="100%">
                         <tr>
-                            <td>Status: {{ $job->status->value }}</td>
+                            <td>Status: {{ $job->status->label() }}</td>
                             <td>Data wykonania: {{ $job->scheduled_at->format('d.m.Y') }}</td>
                             <td>Technik: {{ $job->technician->name }}</td>
                         </tr>

@@ -54,6 +54,9 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'toast' => $request->session()->get('inertia.flash_data.toast'),
             ],
+            'features' => [
+                'openai' => config('services.openai.enabled', false),
+            ],
         ];
     }
 }

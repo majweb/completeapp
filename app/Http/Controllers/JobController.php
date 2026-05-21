@@ -16,8 +16,23 @@ use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
+use App\Services\AIService;
+
 class JobController extends Controller
 {
+    public function generateSummary(Job $job, AIService $aiService)
+    {
+        Gate::authorize('update', $job);
+
+        $summary = $aiService->generateJobSummary($job);
+
+        $job->update([
+            'report_summary' => $summary,
+        ]);
+
+        return back()->with('success', 'Podsumowanie AI zostało wygenerowane.');
+    }
+
     public function downloadReport(Job $job)
     {
         Gate::authorize('view', $job);

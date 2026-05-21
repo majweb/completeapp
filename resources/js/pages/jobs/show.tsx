@@ -1,5 +1,5 @@
 import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
-import { LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown } from 'lucide-react';
+import { LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw } from 'lucide-react';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
 
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { VoiceInput } from '@/components/voice-input';
-import { index as indexRoute, edit as editRoute, report as reportRoute } from '@/routes/jobs';
+import { index as indexRoute, edit as editRoute, report as reportRoute, generateSummary as generateSummaryRoute } from '@/routes/jobs';
 
 interface MediaItem {
     id: number;
@@ -72,9 +72,10 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Show({ job }: Props) {
-    const { auth } = usePage().props as any;
+    const { auth, features } = usePage().props as any;
     const user = auth.user;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
+    const isOpenAiEnabled = features?.openai ?? false;
 
     const { data, setData, put, processing, errors } = useForm<{
         checklist_content: ChecklistItem[];
@@ -306,6 +307,12 @@ export default function Show({ job }: Props) {
         router.post(saveSignature(job.id).url, { signature }, {
             preserveScroll: true,
             onSuccess: () => setIsSignatureOpen(false),
+        });
+    };
+
+    const handleGenerateAISummary = () => {
+        router.post(generateSummaryRoute(job.id).url, {}, {
+            preserveScroll: true,
         });
     };
 
@@ -641,6 +648,48 @@ export default function Show({ job }: Props) {
                                 </CardContent>
                              </Card>
                         </div>
+
+                        {/* AI Summary Section */}
+                        {isOpenAiEnabled && (
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <CardTitle className="flex items-center gap-2">
+                                        <LucideSparkles className="h-5 w-5 text-purple-500" />
+                                        Podsumowanie AI
+                                    </CardTitle>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={handleGenerateAISummary}
+                                        disabled={processing}
+                                        className="cursor-pointer"
+                                    >
+                                        {job.report_summary ? (
+                                            <>
+                                                <LucideRefreshCcw className="mr-2 h-4 w-4" />
+                                                Odśwież AI
+                                            </>
+                                        ) : (
+                                            <>
+                                                <LucideSparkles className="mr-2 h-4 w-4" />
+                                                Generuj AI
+                                            </>
+                                        )}
+                                    </Button>
+                                </CardHeader>
+                                <CardContent>
+                                    {job.report_summary ? (
+                                        <div className="bg-muted/30 p-4 rounded-lg border italic text-sm leading-relaxed whitespace-pre-wrap">
+                                            {job.report_summary}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground text-center py-4">
+                                            Brak podsumowania. Kliknij przycisk powyżej, aby wygenerować automatyczne podsumowanie pracy na podstawie checklisty.
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
                     <div className="space-y-6">

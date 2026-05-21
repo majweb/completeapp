@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('jobs/{job}/signature', [JobController::class, 'saveSignature'])->name('jobs.saveSignature');
     Route::get('jobs/{job}/report', [JobController::class, 'downloadReport'])->name('jobs.report');
     Route::post('jobs/{job}/report/send', [JobController::class, 'sendReport'])->name('jobs.sendReport');
+    Route::post('jobs/{job}/generate-summary', [JobController::class, 'generateSummary'])->name('jobs.generateSummary');
 
     Route::get('/company/settings', [CompanyController::class, 'edit'])->name('company.edit');
     Route::post('/company/settings', [CompanyController::class, 'update'])->name('company.update');

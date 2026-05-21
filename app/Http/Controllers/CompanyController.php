@@ -3,11 +3,62 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CompanyController extends Controller
 {
+    public function subscription(SubscriptionService $subscriptionService)
+    {
+        if ($subscriptionService->isFreeMode()) {
+            return redirect()->route('dashboard');
+        }
+
+        $company = auth()->user()->company;
+
+        if (auth()->user()->role !== 'owner') {
+            abort(403);
+        }
+
+        return Inertia::render('company/subscription', [
+            'subscribed' => $company->subscribed('main'),
+            'subscription' => $company->subscription('main'),
+            'intent' => $company->createSetupIntent(),
+            'plans' => [
+                ['id' => 'pro', 'name' => 'Pro', 'price' => 99, 'features' => ['10 techników', '100 zleceń/msc']],
+                ['id' => 'enterprise', 'name' => 'Enterprise', 'price' => 299, 'features' => ['Nielimitowani technicy', 'Nielimitowane zlecenia']],
+            ]
+        ]);
+    }
+
+    public function subscribe(Request $request)
+    {
+        $request->validate([
+            'plan' => 'required|string|in:pro,enterprise',
+        ]);
+
+        $company = auth()->user()->company;
+
+        if (auth()->user()->role !== 'owner') {
+            abort(403);
+        }
+
+        $priceId = match ($request->plan) {
+            'pro' => config('services.stripe.price_pro'),
+            'enterprise' => config('services.stripe.price_enterprise'),
+        };
+
+        if (!$priceId) {
+            return back()->withErrors(['plan' => 'Wybrany plan nie jest skonfigurowany w systemie.']);
+        }
+
+        return $company->newSubscription('main', $priceId)
+            ->checkout([
+                'success_url' => route('subscription.index') . '?success=1',
+                'cancel_url' => route('subscription.index') . '?cancel=1',
+            ]);
+    }
     public function edit()
     {
         $company = auth()->user()->company;

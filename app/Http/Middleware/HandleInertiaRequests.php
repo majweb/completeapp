@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -45,6 +46,10 @@ class HandleInertiaRequests extends Middleware
                     'company' => $request->user()->company,
                 ] : null,
             ],
+            'subscription' => $request->user() && $request->user()->company ? [
+                'exceedsTechniciansLimit' => app(SubscriptionService::class)->exceedsLimit($request->user()->company, 'technicians'),
+                'exceedsJobsLimit' => app(SubscriptionService::class)->exceedsLimit($request->user()->company, 'jobs_per_month'),
+            ] : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'flash' => [
                 'toast' => $request->session()->get('inertia.flash_data.toast'),

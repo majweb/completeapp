@@ -27,6 +27,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/company/settings', [CompanyController::class, 'edit'])->name('company.edit');
     Route::post('/company/settings', [CompanyController::class, 'update'])->name('company.update');
+
+    // Subscription Management
+    Route::get('/subscription', [CompanyController::class, 'subscription'])->name('subscription.index');
+    Route::post('/subscription', [CompanyController::class, 'subscribe'])->name('subscription.subscribe');
 });
+
+Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook']);
 
 require __DIR__.'/settings.php';

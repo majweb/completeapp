@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'price_pro' => env('STRIPE_PRICE_PRO'),
+        'price_enterprise' => env('STRIPE_PRICE_ENTERPRISE'),
+    ],
+
 ];

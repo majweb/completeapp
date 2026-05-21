@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\JobStatus;
 use App\Models\Job;
 use App\Models\JobTemplate;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Mail\JobReportMail;
@@ -55,9 +56,25 @@ class JobController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SubscriptionService $subscriptionService)
     {
         Gate::authorize('create', Job::class);
+
+        $company = auth()->user()->company;
+
+        // Sprawdź limit zleceń w tym miesiącu
+        $limit = $subscriptionService->getLimit($company, 'jobs_per_month');
+        $currentMonthCount = Job::where('company_id', $company->id)
+            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->count();
+
+        if ($currentMonthCount >= $limit) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Osiągnięto limit zleceń na ten miesiąc dla Twojego planu.',
+            ]);
+            return redirect()->back();
+        }
 
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',

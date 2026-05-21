@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -10,22 +11,42 @@ use Illuminate\Support\Facades\Gate;
 
 class TechnicianController extends Controller
 {
-    public function index()
+    public function index(SubscriptionService $subscriptionService)
     {
         Gate::authorize('viewAny', User::class);
 
-        $technicians = User::where('company_id', auth()->user()->company_id)
+        $company = auth()->user()->company;
+        $technicians = User::where('company_id', $company->id)
             ->whereIn('role', ['technician', 'manager'])
             ->get();
 
+        $limit = $subscriptionService->getLimit($company, 'technicians');
+        $currentCount = $technicians->count();
+
         return Inertia::render('technicians/index', [
-            'technicians' => $technicians
+            'technicians' => $technicians,
+            'canAddMore' => $currentCount < $limit,
+            'limit' => $limit,
+            'isFreeMode' => $subscriptionService->isFreeMode(),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SubscriptionService $subscriptionService)
     {
         Gate::authorize('create', User::class);
+
+        $company = auth()->user()->company;
+        $currentCount = User::where('company_id', $company->id)
+            ->whereIn('role', ['technician', 'manager'])
+            ->count();
+
+        if ($currentCount >= $subscriptionService->getLimit($company, 'technicians')) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Osiągnięto limit techników dla Twojego planu.',
+            ]);
+            return redirect()->back();
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',

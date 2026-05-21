@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Users, ClipboardList, FileText, HardHat, Settings } from 'lucide-react';
+import { LayoutGrid, Users, ClipboardList, FileText, HardHat, Settings, CreditCard } from 'lucide-react';
 import { index as clientsIndex } from '@/actions/App/Http/Controllers/ClientController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -18,13 +18,14 @@ import { dashboard } from '@/routes';
 import { edit as companySettingsRoute } from '@/routes/company';
 import { index as jobTemplatesIndex } from '@/routes/job-templates';
 import { index as jobsIndex } from '@/routes/jobs';
-import { index as techniciansIndexRoute } from '@/routes/technicians';
+import { index as subscriptionIndex } from '@/routes/subscription';
+import { index as technicianIndex } from '@/routes/technicians';
 import type { NavItem } from '@/types';
 
 const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
-    const { auth } = usePage().props as any;
+    const { auth, isFreeMode } = usePage().props as any;
     const user = auth.user;
 
     const mainNavItems: NavItem[] = [
@@ -49,7 +50,7 @@ export function AppSidebar() {
             },
             {
                 title: 'Ekipa (Technicy)',
-                href: techniciansIndexRoute(),
+                href: technicianIndex(),
                 icon: HardHat,
             },
             {
@@ -62,9 +63,17 @@ export function AppSidebar() {
         if (user.role === 'owner') {
             mainNavItems.push({
                 title: 'Ustawienia firmy',
-                href: companySettingsRoute(),
+                href: companySettingsRoute.url(),
                 icon: Settings,
             });
+
+            if (!isFreeMode) {
+                mainNavItems.push({
+                    title: 'Subskrypcja',
+                    href: subscriptionIndex(),
+                    icon: CreditCard,
+                });
+            }
         }
     } else if (user.role === 'technician') {
         // Technicians can also see clients (view only)

@@ -4,12 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Cashier\Billable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Company extends Model implements HasMedia
 {
-    use InteractsWithMedia, HasFactory;
+    use InteractsWithMedia, HasFactory, Billable;
+
+    public function stripeCustomFields(): array
+    {
+        return [
+            'company_id' => $this->id,
+        ];
+    }
 
     protected $fillable = [
         'name',

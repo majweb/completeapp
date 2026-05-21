@@ -69,6 +69,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Free Mode
+    |--------------------------------------------------------------------------
+    |
+    | When set to true, the application will bypass subscription checks
+    | and provide all features for free. Useful for early stages or local dev.
+    |
+    */
+    'free_mode' => env('APP_FREE_MODE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

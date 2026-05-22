@@ -59,6 +59,40 @@ class CompanyController extends Controller
                 'cancel_url' => route('subscription.index') . '?cancel=1',
             ]);
     }
+    public function invoices()
+    {
+        $company = auth()->user()->company;
+
+        if (auth()->user()->role !== 'owner') {
+            abort(403);
+        }
+
+        return Inertia::render('company/invoices', [
+            'invoices' => $company->invoices()->map(function ($invoice) {
+                return [
+                    'id' => $invoice->id,
+                    'total' => $invoice->total(),
+                    'date' => $invoice->date()->toFormattedDateString(),
+                    'status' => $invoice->status,
+                ];
+            }),
+        ]);
+    }
+
+    public function downloadInvoice(Request $request, $invoiceId)
+    {
+        $company = auth()->user()->company;
+
+        if (auth()->user()->role !== 'owner') {
+            abort(403);
+        }
+
+        return $company->downloadInvoice($invoiceId, [
+            'vendor' => 'CompleteApp Service',
+            'product' => 'Subskrypcja Systemu Zleceń',
+        ]);
+    }
+
     public function edit()
     {
         $company = auth()->user()->company;

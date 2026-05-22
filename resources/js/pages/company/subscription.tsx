@@ -56,8 +56,11 @@ export default function Subscription({ subscribed, subscription, plans }: Props)
                                     Twoja subskrypcja jest aktywna. Możesz ją zmienić lub anulować w dowolnym momencie.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="flex gap-4">
                                 <Button variant="outline">Zarządzaj w Stripe</Button>
+                                <Button variant="secondary" asChild>
+                                    <Link href="/subscription/invoices">Zobacz Faktury</Link>
+                                </Button>
                             </CardContent>
                         </Card>
                     ) : (

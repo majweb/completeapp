@@ -1,5 +1,5 @@
-import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
-import { Bell, Briefcase, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock, MapPin } from 'lucide-react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock } from 'lucide-react';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
 
@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { VoiceInput } from '@/components/voice-input';
 import { index as indexRoute, edit as editRoute, report as reportRoute, generateSummary as generateSummaryRoute } from '@/routes/jobs';
+
+import type { PageProps } from '@/types';
 
 interface MediaItem {
     id: number;
@@ -56,9 +58,6 @@ interface Job {
     technician: {
         name: string;
     };
-    template: {
-        name: string;
-    };
     checklist: {
         id: number;
         content: ChecklistItem[];
@@ -69,12 +68,21 @@ interface Job {
         problems: MediaItem[];
         signature: string | null;
     };
+    template: {
+        name: string;
+        require_photo_before: boolean;
+        require_photo_after: boolean;
+        require_signature: boolean;
+    };
     audit_logs: AuditLog[];
 }
 
-interface Props {
+interface Props extends PageProps {
     job: Job;
     twilio_enabled: boolean;
+    features?: {
+        openai?: boolean;
+    };
 }
 
 const statusLabels: Record<string, string> = {
@@ -84,9 +92,8 @@ const statusLabels: Record<string, string> = {
     approved: 'Zatwierdzone',
 };
 
-export default function Show({ job, twilio_enabled }: Props) {
-    const { auth, features } = usePage().props as any;
-    const user = auth.user;
+export default function Show({ job, twilio_enabled, auth, features }: Props) {
+    const user = auth.user as any;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
     const isOpenAiEnabled = features?.openai ?? false;
 
@@ -107,6 +114,7 @@ export default function Show({ job, twilio_enabled }: Props) {
     const [uploadingCollection, setUploadingCollection] = useState<string | null>(null);
     const [draggedItem, setDraggedItem] = useState<{ id: number, collection: string } | null>(null);
     const [dragOverItem, setDragOverItem] = useState<number | null>(null);
+    const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
     const signatureRef = useRef<HTMLCanvasElement>(null);
     const signaturePadRef = useRef<SignaturePad | null>(null);
 
@@ -163,7 +171,13 @@ export default function Show({ job, twilio_enabled }: Props) {
     const saveChecklist = () => {
         put(update(job.id).url, {
             preserveScroll: true,
-        } as any);
+            onSuccess: () => {
+                // Toast success handled by backend flash
+            },
+            onError: (errors) => {
+                console.error('Validation errors:', errors);
+            }
+        });
     };
 
     const onMediaDragStart = (e: React.DragEvent, id: number, collection: string) => {
@@ -263,6 +277,15 @@ export default function Show({ job, twilio_enabled }: Props) {
                 },
                 onSuccess: () => {
                     // Inertia automatycznie przeładuje propsy, co odświeży listę zdjęć
+                    // Czyścimy błędy mediów po sukcesie uploadu
+
+                    if (collection === 'images_before') {
+                        delete (errors as any)['media.images_before'];
+                    }
+
+                    if (collection === 'images_after') {
+                        delete (errors as any)['media.images_after'];
+                    }
                 },
                 onError: (errors) => {
                     console.error('Upload error:', errors);
@@ -319,9 +342,20 @@ export default function Show({ job, twilio_enabled }: Props) {
         }
 
         const signature = signaturePadRef.current?.toDataURL();
+
+        // Use router.post for media but manually sync errors if needed,
+        // or rely on finishJob to trigger backend validation
         router.post(saveSignature(job.id).url, { signature }, {
             preserveScroll: true,
-            onSuccess: () => setIsSignatureOpen(false),
+            onSuccess: () => {
+                setIsSignatureOpen(false);
+                // Clear specific signature error from useForm errors
+                delete (errors as any)['media.signature'];
+            },
+            onError: (errs) => {
+                // Manually sync errors from router to useForm if needed
+                Object.assign(errors, errs);
+            }
         });
     };
 
@@ -338,18 +372,38 @@ export default function Show({ job, twilio_enabled }: Props) {
     };
 
     const finishJob = () => {
-        router.put(update(job.id).url, {
-            checklist_content: data.checklist_content,
-            status: 'completed',
-            send_sms: data.send_sms,
-        }, {
-            onSuccess: () => setIsFinishDialogOpen(false),
-            onError: () => {
-                setIsFinishDialogOpen(false);
-            },
-            preserveScroll: true,
+        // Force status to completed for backend validation
+        setData('status', 'completed');
+
+        // Small delay to ensure state is updated before submit
+        setTimeout(() => {
+            put(update(job.id).url, {
+                onSuccess: () => setIsFinishDialogOpen(false),
+                onError: (errs) => {
+                    setIsFinishDialogOpen(false);
+                    console.error('Finish job errors:', errs);
+                },
+                preserveScroll: true,
+            });
+        }, 50);
+    };
+
+    const isChecklistComplete = () => {
+        if (!job.checklist) {
+            return true;
+        }
+
+        return job.checklist.content.every((item: ChecklistItem) => {
+            if (!item.required) {
+                return true;
+            }
+
+            return item.value !== null && item.value !== '' && item.value !== false;
         });
     };
+
+    const canFinish = job.started_at !== null;
+    const canViewReport = (job.status === 'completed' || job.status === 'approved') && isChecklistComplete();
 
     return (
         <>
@@ -401,55 +455,194 @@ export default function Show({ job, twilio_enabled }: Props) {
             </Dialog>
 
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Button variant="outline" size="icon" asChild className="cursor-pointer">
-                                <Link href={indexRoute().url}>
-                                    <LucideArrowLeft className="h-4 w-4" />
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <Button variant="outline" size="icon" asChild className="h-9 w-9 shrink-0 cursor-pointer">
+                            <Link href={indexRoute().url}>
+                                <LucideArrowLeft className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                        <div className="min-w-0">
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">Zlecenie #{job.id}</h1>
+                            <p className="text-xs sm:text-sm text-muted-foreground truncate">{job.template?.name}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between sm:justify-end gap-2">
+                        {isOwnerOrManager && (
+                            <Button variant="outline" size="sm" asChild className="h-8 cursor-pointer">
+                                <Link href={editRoute(job.id).url}>
+                                    <LucidePencil className="mr-2 h-3.5 w-3.5" />
+                                    Edytuj
                                 </Link>
                             </Button>
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight">Zlecenie #{job.id}</h1>
-                                <p className="text-sm text-muted-foreground">{job.template?.name}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {isOwnerOrManager && (
-                                <Button variant="outline" size="sm" asChild className="cursor-pointer">
-                                    <Link href={editRoute(job.id).url}>
-                                        <LucidePencil className="mr-2 h-4 w-4" />
-                                        Edytuj
-                                    </Link>
-                                </Button>
-                            )}
-                            <Badge variant="outline" className="text-sm px-3 py-1 uppercase tracking-wider bg-background">
-                                {statusLabels[job.status] || job.status}
-                            </Badge>
-                        </div>
+                        )}
+                        <Badge variant="outline" className="text-[10px] sm:text-xs px-2 py-0.5 sm:px-3 sm:py-1 uppercase tracking-wider bg-background whitespace-nowrap">
+                            {statusLabels[job.status] || job.status}
+                        </Badge>
                     </div>
+                </div>
 
-                {job.status === 'new' && (
-                    <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-background border border-primary/20 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm mb-2">
-                        <div className="flex items-center gap-5">
-                            <div className="bg-primary p-4 rounded-2xl shadow-lg rotate-3">
-                                <LucideSparkles className="h-8 w-8 text-primary-foreground" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-foreground">Gotowy do rozpoczęcia?</h3>
-                                <p className="text-muted-foreground max-w-md">Rozpocznij zlecenie, aby odblokować checklistę, dodać dokumentację fotograficzną i zarejestrować czas pracy.</p>
-                            </div>
+                {(errors as any)['media.images_before'] || (errors as any)['media.images_after'] || (errors as any)['media.signature'] ? (
+                    <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl mb-2 flex items-start gap-3">
+                        <Bell className="h-5 w-5 text-destructive mt-0.5" />
+                        <div className="space-y-1">
+                            <h4 className="font-bold text-destructive">Wymagania zlecenia nie zostały spełnione</h4>
+                            <ul className="text-sm text-destructive list-disc list-inside">
+                                { (errors as any)['media.images_before'] && <li>{ (errors as any)['media.images_before']}</li>}
+                                { (errors as any)['media.images_after'] && <li>{ (errors as any)['media.images_after']}</li>}
+                                { (errors as any)['media.signature'] && <li>{ (errors as any)['media.signature']}</li>}
+                            </ul>
                         </div>
-                        <Button
-                            onClick={() => router.put(update(job.id).url, { status: 'in_progress' })}
-                            size="lg"
-                            className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-16 px-10 text-lg rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group"
-                        >
-                            <LucidePlusCircle className="mr-3 h-6 w-6 group-hover:rotate-90 transition-transform duration-300" />
-                            ROZPOCZNIJ PRACĘ
-                            <LucideArrowRight className="ml-2 h-5 w-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                        </Button>
                     </div>
-                )}
+                ) : null}
+
+                        <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-background border border-primary/20 p-4 sm:p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 shadow-sm mb-2">
+                            <div className="flex items-center gap-3 sm:gap-5 w-full md:w-auto">
+                                <div className="bg-primary p-3 sm:p-4 rounded-2xl shadow-lg rotate-3 shrink-0">
+                                    <LucideSparkles className="h-6 w-6 sm:h-8 sm:w-8 text-primary-foreground" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg sm:text-xl font-bold text-foreground">Gotowy?</h3>
+                                    <p className="text-xs sm:text-sm text-muted-foreground max-w-md">Rozpocznij zlecenie, aby odblokować checklistę.</p>
+                                </div>
+                            </div>
+                            <Button
+                                onClick={() => router.put(update(job.id).url, { status: 'in_progress' })}
+                                size="lg"
+                                className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 sm:h-16 px-6 sm:px-10 text-base sm:text-lg rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group"
+                            >
+                                <LucidePlusCircle className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 group-hover:rotate-90 transition-transform duration-300" />
+                                ROZPOCZNIJ PRACĘ
+                                <LucideArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                            </Button>
+                        </div>
+
+                {/* History Section (Collapsible) - Moved to top */}
+                <Card className="mb-2 overflow-hidden">
+                    <button
+                        onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left cursor-pointer"
+                    >
+                        <div className="flex items-center gap-2">
+                            <LucideFileText className="h-5 w-5 text-muted-foreground" />
+                            <CardTitle className="text-base m-0">Historia zmian ({job.audit_logs.length})</CardTitle>
+                        </div>
+                        {isHistoryExpanded ? (
+                            <LucideArrowUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                            <LucideArrowDown className="h-4 w-4 text-muted-foreground" />
+                        )}
+                    </button>
+                    {isHistoryExpanded && (
+                        <CardContent className="pt-0 border-t">
+                            <div className="space-y-4 pt-4">
+                                {job.audit_logs.length > 0 ? (
+                                    job.audit_logs.map((log) => {
+                                        const formatValue = (key: string, value: any) => {
+                                            if (value === null || value === undefined) {
+                                                return <span className="text-muted-foreground italic">brak</span>;
+                                            }
+
+                                            if (key === 'status') {
+                                                const statusLabelsMap: Record<string, string> = {
+                                                    'new': 'Nowe',
+                                                    'in_progress': 'W trakcie',
+                                                    'completed': 'Zakończone',
+                                                    'approved': 'Zatwierdzone'
+                                                };
+
+                                                return <Badge variant="outline" className="text-[10px] py-0 h-4">{statusLabelsMap[value] || value}</Badge>;
+                                            }
+
+                                            if (key.endsWith('_at') && typeof value === 'string') {
+                                                try {
+                                                    return new Date(value).toLocaleString('pl-PL', {
+                                                        year: 'numeric',
+                                                        month: '2-digit',
+                                                        day: '2-digit',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    });
+                                                } catch {
+                                                    return value;
+                                                }
+                                            }
+
+                                            return typeof value === 'object' ? JSON.stringify(value) : String(value);
+                                        };
+
+                                        const getFieldLabel = (key: string) => {
+                                            const fieldLabels: Record<string, string> = {
+                                                'status': 'Status',
+                                                'assigned_to': 'Technik',
+                                                'client_id': 'Klient',
+                                                'template_id': 'Szablon',
+                                                'scheduled_at': 'Planowana data',
+                                                'started_at': 'Data rozpoczęcia',
+                                                'completed_at': 'Data zakończenia',
+                                                'report_summary': 'Podsumowanie'
+                                            };
+
+                                            return fieldLabels[key] || key;
+                                        };
+
+                                        return (
+                                            <div key={log.id} className="text-sm border-l-2 border-muted pl-4 py-2 relative group hover:bg-muted/30 transition-colors rounded-r-md">
+                                                <div className="absolute -left-[9px] top-3 h-4 w-4 rounded-full border-2 border-background bg-muted group-hover:bg-primary/30 transition-colors" />
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                                                        {log.event === 'created' ? (
+                                                            <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                                                                <LucidePlusCircle className="h-3 w-3" /> Utworzono
+                                                            </span>
+                                                        ) : log.event === 'updated' ? (
+                                                            <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                                                <LucidePencil className="h-3 w-3" /> Zaktualizowano
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                                <LucideTrash2 className="h-3 w-3" /> Usunięto
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    <span className="text-[10px] font-medium text-muted-foreground/70">
+                                                        {new Date(log.created_at).toLocaleString('pl-PL')}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs mb-2">
+                                                    <span className="text-muted-foreground font-normal">Przez: </span>
+                                                    <span className="font-semibold text-foreground">{log.user?.name || 'System'}</span>
+                                                </div>
+                                                {log.event === 'updated' && log.new_values && (
+                                                    <div className="mt-2 space-y-1.5 bg-background/50 p-2 rounded border border-muted/50">
+                                                        {Object.keys(log.new_values).map((key) => (
+                                                            <div key={key} className="text-[11px] grid grid-cols-[80px_1fr] gap-2 items-baseline">
+                                                                <span className="font-medium text-muted-foreground truncate" title={getFieldLabel(key)}>
+                                                                    {getFieldLabel(key)}:
+                                                                </span>
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="text-muted-foreground line-through opacity-70">
+                                                                        {formatValue(key, log.old_values?.[key])}
+                                                                    </span>
+                                                                    <LucideArrowRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                                                                    <span className="font-medium text-foreground">
+                                                                        {formatValue(key, log.new_values[key])}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="text-xs text-muted-foreground text-center py-2">Brak wpisów w historii.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    )}
+                </Card>
 
                 <div className="grid gap-6 md:grid-cols-3">
                     <div className="md:col-span-2 space-y-6">
@@ -503,9 +696,9 @@ export default function Show({ job, twilio_enabled }: Props) {
                                                             {!!item.value && <LucideCheck className="h-4 w-4 text-green-600" />}
                                                         </div>
                                                     </div>
-                                                    {(errors as any)[`checklist_content.${index}.value`] && (
+                                                    { (errors as any)[`checklist_content.${index}.value`] && (
                                                         <p className="text-xs text-destructive mt-1.5 ml-11 font-medium">
-                                                            {(errors as any)[`checklist_content.${index}.value`]}
+                                                            { (errors as any)[`checklist_content.${index}.value`]}
                                                         </p>
                                                     )}
                                                 </div>
@@ -537,13 +730,12 @@ export default function Show({ job, twilio_enabled }: Props) {
                                                                     updateChecklist(index, val + (val ? ' ' : '') + text);
                                                                 }}
                                                                 className={`absolute right-1 top-1/2 -translate-y-1/2 ${!job.started_at ? 'pointer-events-none opacity-50' : ''}`}
-                                                                disabled={!job.started_at}
                                                             />
                                                         )}
                                                     </div>
-                                                    {(errors as any)[`checklist_content.${index}.value`] && (
+                                                    { (errors as any)[`checklist_content.${index}.value`] && (
                                                         <p className="text-xs text-destructive font-medium">
-                                                            {(errors as any)[`checklist_content.${index}.value`]}
+                                                            { (errors as any)[`checklist_content.${index}.value`]}
                                                         </p>
                                                     )}
                                                 </div>
@@ -564,18 +756,29 @@ export default function Show({ job, twilio_enabled }: Props) {
                                     <CardTitle className="text-sm flex items-center gap-2">
                                         <LucideCamera className="h-4 w-4" />
                                         Zdjęcia PRZED
+                                        {job.template.require_photo_before && <span className="text-red-500 font-bold">*</span>}
                                     </CardTitle>
-                                    <Label htmlFor="upload-before" className="cursor-pointer p-1 hover:bg-muted rounded-full">
+                                    <Label htmlFor="upload-before" className={`p-1 hover:bg-muted rounded-full ${!job.started_at ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                                         <LucidePlus className="h-4 w-4" />
-                                        <input id="upload-before" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'images_before')} />
+                                        <input id="upload-before" type="file" className="hidden" accept="image/*" onChange={(e) => job.started_at && handleFileUpload(e, 'images_before')} disabled={!job.started_at} />
                                     </Label>
                                 </CardHeader>
-                                <CardContent className="p-4 pt-0">
+                                <CardContent className="p-4 pt-0 relative">
+                                    {!job.started_at && (
+                                        <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                            <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
+                                                <Clock className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                    Rozpocznij zlecenie, aby dodać zdjęcia.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div
-                                        className={`grid grid-cols-3 gap-2 p-2 rounded-lg border-2 border-dashed transition-colors ${dragOver === 'images_before' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
-                                        onDragOver={(e) => onDragOver(e, 'images_before')}
+                                        className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-2 p-2 rounded-lg border-2 border-dashed transition-colors ${ (errors as any)['media.images_before'] ? 'border-destructive bg-destructive/5' : dragOver === 'images_before' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
+                                        onDragOver={(e) => job.started_at && onDragOver(e, 'images_before')}
                                         onDragLeave={onDragLeave}
-                                        onDrop={(e) => onDrop(e, 'images_before')}
+                                        onDrop={(e) => job.started_at && onDrop(e, 'images_before')}
                                     >
                                         {job.media.images_before.map((m, idx) => (
                                             <div
@@ -622,6 +825,9 @@ export default function Show({ job, twilio_enabled }: Props) {
                                             <input id="upload-before-grid" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'images_before')} disabled={!!uploadingCollection} />
                                         </label>
                                     </div>
+                                    { (errors as any)['media.images_before'] && (
+                                        <p className="text-xs text-destructive mt-2 font-medium">{ (errors as any)['media.images_before']}</p>
+                                    )}
                                 </CardContent>
                             </Card>
 
@@ -630,18 +836,29 @@ export default function Show({ job, twilio_enabled }: Props) {
                                     <CardTitle className="text-sm flex items-center gap-2">
                                         <LucideCamera className="h-4 w-4" />
                                         Zdjęcia PO
+                                        {job.template.require_photo_after && <span className="text-red-500 font-bold">*</span>}
                                     </CardTitle>
-                                    <Label htmlFor="upload-after" className="cursor-pointer p-1 hover:bg-muted rounded-full">
+                                    <Label htmlFor="upload-after" className={`p-1 hover:bg-muted rounded-full ${!job.started_at ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                                         <LucidePlus className="h-4 w-4" />
-                                        <input id="upload-after" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'images_after')} />
+                                        <input id="upload-after" type="file" className="hidden" accept="image/*" onChange={(e) => job.started_at && handleFileUpload(e, 'images_after')} disabled={!job.started_at} />
                                     </Label>
                                 </CardHeader>
-                                <CardContent className="p-4 pt-0">
+                                <CardContent className="p-4 pt-0 relative">
+                                    {!job.started_at && (
+                                        <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                            <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
+                                                <Clock className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                    Rozpocznij zlecenie, aby dodać zdjęcia.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div
-                                        className={`grid grid-cols-3 gap-2 p-2 rounded-lg border-2 border-dashed transition-colors ${dragOver === 'images_after' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
-                                        onDragOver={(e) => onDragOver(e, 'images_after')}
+                                        className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-2 p-2 rounded-lg border-2 border-dashed transition-colors ${ (errors as any)['media.images_after'] ? 'border-destructive bg-destructive/5' : dragOver === 'images_after' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
+                                        onDragOver={(e) => job.started_at && onDragOver(e, 'images_after')}
                                         onDragLeave={onDragLeave}
-                                        onDrop={(e) => onDrop(e, 'images_after')}
+                                        onDrop={(e) => job.started_at && onDrop(e, 'images_after')}
                                     >
                                         {job.media.images_after.map((m, idx) => (
                                             <div
@@ -688,6 +905,9 @@ export default function Show({ job, twilio_enabled }: Props) {
                                             <input id="upload-after-grid" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'images_after')} disabled={!!uploadingCollection} />
                                         </label>
                                     </div>
+                                    { (errors as any)['media.images_after'] && (
+                                        <p className="text-xs text-destructive mt-2 font-medium">{ (errors as any)['media.images_after']}</p>
+                                    )}
                                 </CardContent>
                             </Card>
 
@@ -696,18 +916,29 @@ export default function Show({ job, twilio_enabled }: Props) {
                                     <CardTitle className="text-sm flex items-center gap-2">
                                         <LucideFileText className="h-4 w-4" />
                                         Podpis klienta
+                                        {job.template.require_signature && <span className="text-red-500 font-bold">*</span>}
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="p-4 pt-0">
+                                <CardContent className="p-4 pt-0 relative">
+                                    {!job.started_at && (
+                                        <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                            <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
+                                                <Clock className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                    Rozpocznij zlecenie, aby zebrać podpis.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     {job.media.signature ? (
                                         <div className="border rounded-md p-2 bg-white">
                                             <img src={job.media.signature} alt="Podpis" className="h-20 w-full object-contain" />
                                             <p className="text-[10px] text-center text-muted-foreground mt-1">Podpisano</p>
                                         </div>
                                     ) : (
-                                        <Dialog open={isSignatureOpen} onOpenChange={setIsSignatureOpen}>
+                                        <Dialog open={isSignatureOpen} onOpenChange={(open) => job.started_at && setIsSignatureOpen(open)}>
                                             <DialogTrigger asChild>
-                                                <Button variant="secondary" className="w-full h-24 border-2 border-dashed flex-col cursor-pointer">
+                                                <Button variant="secondary" disabled={!job.started_at} className={`w-full h-24 border-2 border-dashed flex-col ${!job.started_at ? 'cursor-not-allowed' : 'cursor-pointer'} ${ (errors as any)['media.signature'] ? 'border-destructive bg-destructive/5 text-destructive' : ''}`}>
                                                     <LucidePencil className="h-6 w-6 mb-1" />
                                                     Zbierz podpis
                                                 </Button>
@@ -725,6 +956,9 @@ export default function Show({ job, twilio_enabled }: Props) {
                                                 </div>
                                             </DialogContent>
                                         </Dialog>
+                                    )}
+                                    { (errors as any)['media.signature'] && (
+                                        <p className="text-xs text-destructive mt-2 font-medium">{ (errors as any)['media.signature']}</p>
                                     )}
                                 </CardContent>
                              </Card>
@@ -772,122 +1006,6 @@ export default function Show({ job, twilio_enabled }: Props) {
                             </Card>
                         )}
 
-                        {/* History Section */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <LucideFileText className="h-5 w-5 text-muted-foreground" />
-                                    Historia zmian
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {job.audit_logs.length > 0 ? (
-                                        job.audit_logs.map((log) => {
-                                            const formatValue = (key: string, value: any) => {
-                                                if (value === null || value === undefined) {
-                                                    return <span className="text-muted-foreground italic">brak</span>;
-                                                }
-
-                                                if (key === 'status') {
-                                                    const statusLabelsMap: Record<string, string> = {
-                                                        'new': 'Nowe',
-                                                        'in_progress': 'W trakcie',
-                                                        'completed': 'Zakończone',
-                                                        'approved': 'Zatwierdzone'
-                                                    };
-
-                                                    return <Badge variant="outline" className="text-[10px] py-0 h-4">{statusLabelsMap[value] || value}</Badge>;
-                                                }
-
-                                                if (key.endsWith('_at') && typeof value === 'string') {
-                                                    try {
-                                                        return new Date(value).toLocaleString('pl-PL', {
-                                                            year: 'numeric',
-                                                            month: '2-digit',
-                                                            day: '2-digit',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        });
-                                                    } catch {
-                                                        return value;
-                                                    }
-                                                }
-
-                                                return typeof value === 'object' ? JSON.stringify(value) : String(value);
-                                            };
-
-                                            const getFieldLabel = (key: string) => {
-                                                const fieldLabels: Record<string, string> = {
-                                                    'status': 'Status',
-                                                    'assigned_to': 'Technik',
-                                                    'client_id': 'Klient',
-                                                    'template_id': 'Szablon',
-                                                    'scheduled_at': 'Planowana data',
-                                                    'started_at': 'Data rozpoczęcia',
-                                                    'completed_at': 'Data zakończenia',
-                                                    'report_summary': 'Podsumowanie'
-                                                };
-
-                                                return fieldLabels[key] || key;
-                                            };
-
-                                            return (
-                                                <div key={log.id} className="text-sm border-l-2 border-muted pl-4 py-2 relative group hover:bg-muted/30 transition-colors rounded-r-md">
-                                                    <div className="absolute -left-[9px] top-3 h-4 w-4 rounded-full border-2 border-background bg-muted group-hover:bg-primary/30 transition-colors" />
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
-                                                            {log.event === 'created' ? (
-                                                                <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                                                                    <LucidePlusCircle className="h-3 w-3" /> Utworzono
-                                                                </span>
-                                                            ) : log.event === 'updated' ? (
-                                                                <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                                                                    <LucidePencil className="h-3 w-3" /> Zaktualizowano
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
-                                                                    <LucideTrash2 className="h-3 w-3" /> Usunięto
-                                                                </span>
-                                                            )}
-                                                        </span>
-                                                        <span className="text-[10px] font-medium text-muted-foreground/70">
-                                                            {new Date(log.created_at).toLocaleString('pl-PL')}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-xs mb-2">
-                                                        <span className="text-muted-foreground font-normal">Przez: </span>
-                                                        <span className="font-semibold text-foreground">{log.user?.name || 'System'}</span>
-                                                    </div>
-                                                    {log.event === 'updated' && log.new_values && (
-                                                        <div className="mt-2 space-y-1.5 bg-background/50 p-2 rounded border border-muted/50">
-                                                            {Object.keys(log.new_values).map((key) => (
-                                                                <div key={key} className="text-[11px] grid grid-cols-[80px_1fr] gap-2 items-baseline">
-                                                                    <span className="font-medium text-muted-foreground truncate" title={getFieldLabel(key)}>
-                                                                        {getFieldLabel(key)}:
-                                                                    </span>
-                                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                                        <span className="text-muted-foreground line-through opacity-70">
-                                                                            {formatValue(key, log.old_values?.[key])}
-                                                                        </span>
-                                                                        <LucideArrowRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                                                                        <span className="font-medium text-foreground">
-                                                                            {formatValue(key, log.new_values[key])}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <p className="text-xs text-muted-foreground text-center py-2">Brak wpisów w historii.</p>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
                     </div>
 
                     <div className="space-y-6">
@@ -951,26 +1069,55 @@ export default function Show({ job, twilio_enabled }: Props) {
                             </CardContent>
                         </Card>
 
-                        {/* Actions Section */}
                         <div className="space-y-2">
-                            <Button
-                                className="w-full bg-green-600 hover:bg-green-700 cursor-pointer"
-                                onClick={() => setIsFinishDialogOpen(true)}
-                                disabled={job.status === 'completed' || job.status === 'approved'}
-                            >
-                                <LucideCheck className="mr-2 h-4 w-4" />
-                                Zakończ zlecenie
-                            </Button>
-                            <Button variant="outline" className="w-full cursor-pointer" asChild>
-                                <a href={reportRoute(job.id).url} target="_blank" rel="noreferrer">
-                                    <LucideFileText className="mr-2 h-4 w-4" />
-                                    Podgląd raportu PDF
-                                </a>
-                            </Button>
-                            <Button variant="secondary" className="w-full cursor-pointer" onClick={handleSendReport}>
-                                <LucideMail className="mr-2 h-4 w-4" />
-                                Wyślij do klienta
-                            </Button>
+                            <div className="space-y-1">
+                                <Button
+                                    className="w-full bg-green-600 hover:bg-green-700 cursor-pointer"
+                                    onClick={() => setIsFinishDialogOpen(true)}
+                                    disabled={job.status === 'completed' || job.status === 'approved' || !canFinish}
+                                >
+                                    <LucideCheck className="mr-2 h-4 w-4" />
+                                    Zakończ zlecenie
+                                </Button>
+                                {!canFinish && (
+                                    <p className="text-[10px] text-muted-foreground font-semibold text-center">
+                                        Musisz najpierw rozpocząć pracę, aby móc ją zakończyć.
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-1">
+                                <Button variant="outline" className="w-full cursor-pointer" asChild={canViewReport} disabled={!canViewReport}>
+                                    {canViewReport ? (
+                                        <a href={reportRoute(job.id).url} target="_blank" rel="noreferrer">
+                                            <LucideFileText className="mr-2 h-4 w-4" />
+                                            Podgląd raportu PDF
+                                        </a>
+                                    ) : (
+                                        <div className="flex items-center justify-center">
+                                            <LucideFileText className="mr-2 h-4 w-4" />
+                                            Podgląd raportu PDF
+                                        </div>
+                                    )}
+                                </Button>
+                                {!canViewReport && (
+                                    <p className="text-[10px] text-muted-foreground font-medium text-center">
+                                        Raport dostępny po zakończeniu zlecenia i wypełnieniu wszystkich wymaganych pól checklisty.
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-1">
+                                <Button variant="secondary" className="w-full cursor-pointer" onClick={handleSendReport} disabled={!canViewReport}>
+                                    <LucideMail className="mr-2 h-4 w-4" />
+                                    Wyślij do klienta
+                                </Button>
+                                {!canViewReport && (
+                                    <p className="text-[10px] text-muted-foreground font-medium text-center">
+                                        Wysyłka możliwa po zakończeniu zlecenia i wypełnieniu checklisty.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

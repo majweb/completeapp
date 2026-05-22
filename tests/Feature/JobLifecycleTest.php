@@ -131,10 +131,11 @@ test('can download job report', function () {
         'client_id' => $this->client->id,
         'template_id' => $this->template->id,
         'assigned_to' => $this->user->id,
-        'status' => \App\Enums\JobStatus::NEW,
+        'status' => JobStatus::COMPLETED,
         'scheduled_at' => now(),
+        'started_at' => now()->subHour(),
     ]);
-    $this->template->generateChecklist($job);
+    $job->checklist()->create(['content' => []]);
 
     $response = $this->get(route('jobs.report', $job));
 
@@ -194,9 +195,11 @@ test('can send job report', function () {
         'client_id' => $this->client->id,
         'template_id' => $this->template->id,
         'assigned_to' => $this->user->id,
-        'status' => JobStatus::NEW,
+        'status' => JobStatus::COMPLETED,
         'scheduled_at' => now(),
+        'started_at' => now()->subHour(),
     ]);
+    $job->checklist()->create(['content' => []]);
 
     $response = $this->post(route('jobs.sendReport', $job));
 

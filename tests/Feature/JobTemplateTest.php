@@ -35,6 +35,9 @@ test('can create job template', function () {
         'name' => 'New Template',
         'description' => 'Test Description',
         'version' => '1.0',
+        'require_photo_before' => false,
+        'require_photo_after' => false,
+        'require_signature' => false,
         'structure' => [
             ['id' => 'f1', 'label' => 'Field 1', 'type' => 'checkbox', 'required' => true]
         ],
@@ -55,6 +58,9 @@ test('can update job template', function () {
     $response = $this->put(route('job-templates.update', $template), [
         'name' => 'Updated Name',
         'version' => '1.1',
+        'require_photo_before' => false,
+        'require_photo_after' => false,
+        'require_signature' => false,
         'structure' => [['id' => '1', 'label' => 'Updated Task', 'type' => 'text', 'required' => false]],
     ]);
 

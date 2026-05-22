@@ -24,6 +24,9 @@ export default function Create() {
         description: string;
         version: string;
         structure: Field[];
+        require_photo_before: boolean;
+        require_photo_after: boolean;
+        require_signature: boolean;
     }>({
         name: '',
         description: '',
@@ -31,6 +34,9 @@ export default function Create() {
         structure: [
             { id: 'field_1', label: '', type: 'checkbox', required: false }
         ],
+        require_photo_before: false,
+        require_photo_after: false,
+        require_signature: false,
     });
 
     const addField = () => {
@@ -188,6 +194,45 @@ export default function Create() {
                                 </div>
                             ))}
                             <InputError message={errors.structure} />
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Wymagania workflow</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="req_photo_before"
+                                        checked={data.require_photo_before}
+                                        onCheckedChange={(checked) => setData('require_photo_before', !!checked)}
+                                    />
+                                    <Label htmlFor="req_photo_before" className="cursor-pointer">Wymagane zdjęcie PRZED</Label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="req_photo_after"
+                                        checked={data.require_photo_after}
+                                        onCheckedChange={(checked) => setData('require_photo_after', !!checked)}
+                                    />
+                                    <Label htmlFor="req_photo_after" className="cursor-pointer">Wymagane zdjęcie PO</Label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="req_signature"
+                                        checked={data.require_signature}
+                                        onCheckedChange={(checked) => setData('require_signature', !!checked)}
+                                    />
+                                    <Label htmlFor="req_signature" className="cursor-pointer">Wymagany podpis klienta</Label>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <InputError message={errors.require_photo_before} />
+                                <InputError message={errors.require_photo_after} />
+                                <InputError message={errors.require_signature} />
+                            </div>
                         </CardContent>
                     </Card>
 

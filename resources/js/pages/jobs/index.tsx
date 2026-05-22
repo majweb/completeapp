@@ -1,12 +1,15 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { LucideCalendar, LucidePlus, LucideUser, LucideTrash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
+import { LucideCalendar, LucidePlus, LucideUser, LucideTrash2, LucideSearch, LucideFilter, LucideX, LucideChevronLeft, LucideChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDebounce } from 'react-use';
 
 import { destroy as destroyAction } from '@/actions/App/Http/Controllers/JobController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { index, create, show } from '@/routes/jobs';
 
 interface Job {
@@ -20,11 +23,31 @@ interface Job {
     technician: {
         id: number;
         name: string;
-    };
+    } | null;
+}
+
+interface PaginationLinks {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface PaginatedJobs {
+    data: Job[];
+    links: PaginationLinks[];
+    current_page: number;
+    last_page: number;
+    total: number;
 }
 
 interface Props {
-    jobs: Job[];
+    jobs: PaginatedJobs;
+    filters: {
+        search?: string;
+        status?: string;
+        technician_id?: string;
+    };
+    technicians: Array<{ id: number; name: string }>;
 }
 
 const statusColors: Record<string, string> = {
@@ -41,13 +64,63 @@ const statusLabels: Record<string, string> = {
     approved: 'Zatwierdzone',
 };
 
-export default function Index({ jobs }: Props) {
+export default function Index({ jobs, filters, technicians }: Props) {
     const { auth } = usePage().props as any;
     const user = auth.user;
     const isTechnician = user.role === 'technician';
 
     const [jobToDelete, setJobToDelete] = useState<number | null>(null);
     const { delete: destroy, processing } = useForm();
+
+    const [search, setSearch] = useState(filters.search || '');
+    const [status, setStatus] = useState(filters.status || 'all');
+    const [technicianId, setTechnicianId] = useState(filters.technician_id || 'all');
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSearch(filters.search || '');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setStatus(filters.status || 'all');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setTechnicianId(filters.technician_id || 'all');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filters]);
+
+    const handleFilter = useCallback(() => {
+        // Nie wysyłaj filtra, jeśli wartości są takie same jak w propsach
+        if (
+            search === (filters.search || '') &&
+            status === (filters.status || 'all') &&
+            technicianId === (filters.technician_id || 'all')
+        ) {
+            return;
+        }
+
+        router.get(
+            index(),
+            {
+                search: search || undefined,
+                status: status === 'all' ? undefined : status,
+                technician_id: technicianId === 'all' ? undefined : technicianId,
+            },
+            { preserveState: true, replace: true },
+        );
+    }, [search, status, technicianId, filters]);
+
+    useDebounce(
+        () => {
+            handleFilter();
+        },
+        500,
+        [search, status, technicianId],
+    );
+
+    const resetFilters = () => {
+        setSearch('');
+        setStatus('all');
+        setTechnicianId('all');
+        router.get(index(), {}, { preserveState: false, replace: true });
+    };
 
     const confirmDelete = () => {
         if (jobToDelete) {
@@ -74,44 +147,154 @@ export default function Index({ jobs }: Props) {
                     )}
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {jobs.map((job) => (
-                        <Card key={job.id} className="overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Zlecenie #{job.id}</CardTitle>
-                                <div className="flex items-center gap-2">
-                                    <Badge className={statusColors[job.status] || 'bg-slate-500'}>
+                <div className="flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-sm md:flex-row md:items-center">
+                    <div className="relative flex-1">
+                        <LucideSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            placeholder="Szukaj..."
+                            className="pl-9"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                        {search && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 cursor-pointer"
+                                onClick={() => setSearch('')}
+                            >
+                                <LucideX className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="flex flex-1 gap-2">
+                            <div className="w-full sm:w-[160px]">
+                                <Select value={status} onValueChange={setStatus}>
+                                    <SelectTrigger className="w-full">
+                                        <LucideFilter className="mr-2 h-4 w-4 text-muted-foreground" />
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Wszystkie statusy</SelectItem>
+                                        {Object.entries(statusLabels).map(([val, label]) => (
+                                            <SelectItem key={val} value={val}>
+                                                {label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {!isTechnician && technicians.length > 0 && (
+                                <div className="w-full sm:w-[160px]">
+                                    <Select value={technicianId} onValueChange={setTechnicianId}>
+                                        <SelectTrigger className="w-full">
+                                            <LucideUser className="mr-2 h-4 w-4 text-muted-foreground" />
+                                            <SelectValue placeholder="Technik" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Wszyscy</SelectItem>
+                                            {technicians.map((t) => (
+                                                <SelectItem key={t.id} value={t.id.toString()}>
+                                                    {t.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 border-t pt-2 sm:border-l sm:border-t-0 sm:pl-2 sm:pt-0">
+                            {(search || status !== 'all' || technicianId !== 'all') && (
+                                <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 cursor-pointer">
+                                    Wyczyść
+                                </Button>
+                            )}
+
+                            {jobs.last_page > 1 && (
+                                <div className="ml-auto flex items-center gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        asChild={!!jobs.links[0].url}
+                                        disabled={!jobs.links[0].url}
+                                    >
+                                        {jobs.links[0].url ? (
+                                            <Link href={jobs.links[0].url as string}>
+                                                <LucideChevronLeft className="h-4 w-4" />
+                                            </Link>
+                                        ) : (
+                                            <LucideChevronLeft className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                    <div className="text-[10px] font-medium px-1 whitespace-nowrap">
+                                        {jobs.current_page} / {jobs.last_page}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        asChild={!!jobs.links[jobs.links.length - 1].url}
+                                        disabled={!jobs.links[jobs.links.length - 1].url}
+                                    >
+                                        {jobs.links[jobs.links.length - 1].url ? (
+                                            <Link href={jobs.links[jobs.links.length - 1].url as string}>
+                                                <LucideChevronRight className="h-4 w-4" />
+                                            </Link>
+                                        ) : (
+                                            <LucideChevronRight className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    {jobs.data.map((job) => (
+                        <Card key={job.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-2">
+                                <CardTitle className="text-xs font-bold text-muted-foreground">#{job.id}</CardTitle>
+                                <div className="flex items-center gap-1">
+                                    <Badge variant="secondary" className={`${statusColors[job.status] || 'bg-slate-500'} text-[9px] px-1.5 py-0 h-4 text-white border-0`}>
                                         {statusLabels[job.status] || job.status}
                                     </Badge>
                                     {(!isTechnician || job.technician?.id === user.id) && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 text-destructive cursor-pointer"
+                                            className="h-6 w-6 text-destructive/50 hover:text-destructive cursor-pointer"
                                             onClick={() => setJobToDelete(job.id)}
                                         >
-                                            <LucideTrash2 className="h-4 w-4" />
+                                            <LucideTrash2 className="h-3 w-3" />
                                         </Button>
                                     )}
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <LucideUser className="h-4 w-4 text-muted-foreground" />
-                                        <span className="font-semibold">{job.client?.name}</span>
+                            <CardContent className="p-3 pt-0">
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-1.5">
+                                        <LucideUser className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                        <span className="font-bold text-sm truncate">{job.client?.name}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <LucideCalendar className="h-4 w-4" />
-                                        <span>{new Date(job.scheduled_at).toLocaleDateString('pl-PL')}</span>
+                                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                        <LucideCalendar className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate">{new Date(job.scheduled_at).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <span className="text-muted-foreground">Technik:</span>
-                                        <span>{job.technician?.name}</span>
+                                    <div className="flex items-center gap-1.5 text-[11px]">
+                                        <span className="text-muted-foreground shrink-0">Technik:</span>
+                                        <span className="font-medium truncate text-muted-foreground/80">
+                                            {job.technician?.id === user.id ? 'Ty' : job.technician?.name || 'Nieprzypisany'}
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="mt-4">
-                                    <Button variant="outline" className="w-full cursor-pointer" asChild>
+                                <div className="mt-3">
+                                    <Button variant="outline" size="sm" className="w-full h-8 text-xs font-medium cursor-pointer" asChild>
                                         <Link href={show(job.id)}>Szczegóły</Link>
                                     </Button>
                                 </div>
@@ -119,7 +302,7 @@ export default function Index({ jobs }: Props) {
                         </Card>
                     ))}
 
-                    {jobs.length === 0 && (
+                    {jobs.data.length === 0 && (
                         <div className="col-span-full flex h-40 flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
                             <p>Brak zleceń.</p>
                             {!isTechnician && (
@@ -130,6 +313,33 @@ export default function Index({ jobs }: Props) {
                         </div>
                     )}
                 </div>
+
+                {jobs.total > 0 && jobs.last_page > 1 && (
+                    <div className="mt-6 flex flex-wrap justify-center gap-1">
+                        {jobs.links.map((link, i) => {
+                            if (link.url === null) {
+                                return (
+                                    <span
+                                        key={i}
+                                        className="rounded-md border px-3 py-1 text-sm text-muted-foreground"
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                    />
+                                );
+                            }
+
+                            return (
+                                <Link
+                                    key={i}
+                                    href={link.url as string}
+                                    className={`rounded-md border px-3 py-1 text-sm transition-colors hover:bg-muted ${
+                                        link.active ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-background'
+                                    }`}
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                />
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Dialog potwierdzenia usuwania */}

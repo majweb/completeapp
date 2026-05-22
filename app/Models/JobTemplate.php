@@ -14,13 +14,32 @@ class JobTemplate extends Model
         'name',
         'description',
         'structure',
+        'require_photo_before',
+        'require_photo_after',
+        'require_signature',
         'version',
         'company_id',
+        'original_id',
+        'is_active',
     ];
 
     protected $casts = [
         'structure' => 'json',
+        'require_photo_before' => 'boolean',
+        'require_photo_after' => 'boolean',
+        'require_signature' => 'boolean',
+        'is_active' => 'boolean',
     ];
+
+    public function original()
+    {
+        return $this->belongsTo(JobTemplate::class, 'original_id');
+    }
+
+    public function versions()
+    {
+        return $this->hasMany(JobTemplate::class, 'original_id');
+    }
 
     public function jobs()
     {

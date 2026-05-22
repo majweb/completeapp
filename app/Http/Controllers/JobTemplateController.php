@@ -15,6 +15,7 @@ class JobTemplateController extends Controller
 
         return Inertia::render('job-templates/index', [
             'templates' => auth()->user()->company->jobTemplates()
+                ->where('is_active', true)
                 ->orderBy('name')
                 ->get(),
         ]);
@@ -39,6 +40,9 @@ class JobTemplateController extends Controller
             'structure.*.label' => 'required|string',
             'structure.*.type' => 'required|string|in:checkbox,text,number',
             'structure.*.required' => 'required|boolean',
+            'require_photo_before' => 'required|boolean',
+            'require_photo_after' => 'required|boolean',
+            'require_signature' => 'required|boolean',
             'version' => 'required|string',
         ]);
 
@@ -70,12 +74,30 @@ class JobTemplateController extends Controller
             'structure.*.label' => 'required|string',
             'structure.*.type' => 'required|string|in:checkbox,text,number',
             'structure.*.required' => 'required|boolean',
+            'require_photo_before' => 'required|boolean',
+            'require_photo_after' => 'required|boolean',
+            'require_signature' => 'required|boolean',
             'version' => 'required|string',
         ]);
 
-        $jobTemplate->update($validated);
+        // Jeśli szablon jest już używany w zleceniach, tworzymy nową wersję
+        if ($jobTemplate->jobs()->exists()) {
+            // Dezaktywujemy stary szablon
+            $jobTemplate->update(['is_active' => false]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Szablon został zaktualizowany.']);
+            // Tworzymy nową wersję
+            $newTemplate = JobTemplate::create(array_merge($validated, [
+                'original_id' => $jobTemplate->original_id ?? $jobTemplate->id,
+                'company_id' => $jobTemplate->company_id,
+                'is_active' => true,
+            ]));
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Utworzono nową wersję szablonu.']);
+        } else {
+            // Jeśli nie jest używany, po prostu aktualizujemy
+            $jobTemplate->update($validated);
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Szablon został zaktualizowany.']);
+        }
 
         return redirect()->route('job-templates.index');
     }

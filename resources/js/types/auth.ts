@@ -22,6 +22,11 @@ export type Auth = {
     user: User;
 };
 
+export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
+    auth: Auth;
+    [key: string]: unknown;
+};
+
 /* @chisel-passkeys */
 export type Passkey = {
     id: number;

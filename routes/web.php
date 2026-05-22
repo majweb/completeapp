@@ -13,6 +13,8 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
+    Route::post('clients/import', [ClientController::class, 'import'])->name('clients.import');
+    Route::get('clients/template', [ClientController::class, 'downloadTemplate'])->name('clients.template');
     Route::resource('clients', ClientController::class);
     Route::resource('jobs', JobController::class);
     Route::resource('job-templates', JobTemplateController::class);
@@ -32,6 +34,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Subscription Management
     Route::get('/subscription', [CompanyController::class, 'subscription'])->name('subscription.index');
     Route::post('/subscription', [CompanyController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::get('/subscription/invoices', [CompanyController::class, 'invoices'])->name('subscription.invoices');
+    Route::get('/subscription/invoices/{invoice}', [CompanyController::class, 'downloadInvoice'])->name('subscription.invoices.download');
 });
 
 Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook']);

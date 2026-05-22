@@ -15,25 +15,35 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        $statsQuery = Job::query();
+        $activityQuery = Job::query();
+        $recentQuery = Job::query();
+
+        // Jeśli to technik, ograniczamy statystyki do jego zleceń
+        if ($user->role === 'technician') {
+            $statsQuery->whereRelation('technician', 'id', $user->id);
+            $activityQuery->whereRelation('technician', 'id', $user->id);
+            $recentQuery->whereRelation('technician', 'id', $user->id);
+        }
+
         $stats = [
-            'total_jobs' => Job::count(),
-            'active_jobs' => Job::whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS])->count(),
-            'completed_today' => Job::where('status', JobStatus::COMPLETED)
+            'total_jobs' => (clone $statsQuery)->count(),
+            'active_jobs' => (clone $statsQuery)->whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS])->count(),
+            'completed_today' => (clone $statsQuery)->where('status', JobStatus::COMPLETED)
                 ->whereDate('completed_at', now())
                 ->count(),
-            'total_clients' => Client::count(),
-            'jobs_by_status' => Job::select('status', DB::raw('count(*) as count'))
+            'total_clients' => Client::count(), // Klienci pozostają widoczni dla wszystkich (zgodnie z ClientPolicy)
+            'jobs_by_status' => (clone $statsQuery)->select('status', DB::raw('count(*) as count'))
                 ->groupBy('status')
                 ->get()
                 ->mapWithKeys(fn ($item) => [$item->status->value => $item->count]),
-            'latest_job_id' => Job::max('id') ?: 0,
+            'latest_job_id' => (clone $statsQuery)->max('id') ?: 0,
         ];
 
         // Technician specific: next assigned jobs
         $next_jobs = [];
         if ($user->role === 'technician') {
-            $next_jobs = Job::with('client')
-                ->where('assigned_to', $user->id)
+            $next_jobs = (clone $statsQuery)->with('client')
                 ->whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS])
                 ->orderBy('scheduled_at')
                 ->limit(3)
@@ -41,7 +51,7 @@ class DashboardController extends Controller
         }
 
         // Monthly activity data
-        $activity_data = Job::select(
+        $activity_data = $activityQuery->select(
             DB::raw('DATE(created_at) as date'),
             DB::raw('count(*) as count')
         )
@@ -54,7 +64,7 @@ class DashboardController extends Controller
                 'count' => $item->count
             ]);
 
-        $recent_jobs = Job::with('client', 'template')
+        $recent_jobs = $recentQuery->with('client', 'template')
             ->latest()
             ->limit(5)
             ->get();

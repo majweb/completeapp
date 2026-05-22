@@ -1,8 +1,8 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { LucidePencil, LucidePlus, LucideTrash2, LucideUser } from 'lucide-react';
-import { useState } from 'react';
+import { LucidePencil, LucidePlus, LucideTrash2, LucideUser, LucideUpload, LucideDownload } from 'lucide-react';
+import { useState, useRef } from 'react';
 
-import { create, destroy, edit, index } from '@/actions/App/Http/Controllers/ClientController';
+import { create, destroy, edit, index, importMethod as importAction, downloadTemplate } from '@/actions/App/Http/Controllers/ClientController';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -45,9 +45,31 @@ export default function Index({ clients }: Props) {
     const user = auth.user;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
 
-    const { delete: destroyClient } = useForm();
+    const { delete: destroyClient, post: postImport, processing: importing, setData } = useForm({
+        file: null as File | null,
+    });
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [clientToDelete, setClientToDelete] = useState<number | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+
+        if (file) {
+            setData('file', file);
+            postImport(importAction.url(), {
+                onSuccess: () => {
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                },
+            });
+        }
+    };
 
     const handleDeleteClick = (id: number) => {
         setClientToDelete(id);
@@ -72,12 +94,36 @@ export default function Index({ clients }: Props) {
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Klienci</h1>
                     {isOwnerOrManager && (
-                        <Button asChild className="cursor-pointer">
-                            <Link href={create.url()}>
-                                <LucidePlus className="mr-2 h-4 w-4" />
-                                Dodaj klienta
-                            </Link>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept=".csv"
+                                className="hidden"
+                            />
+                            <Button
+                                variant="outline"
+                                onClick={handleImportClick}
+                                disabled={importing}
+                                className="cursor-pointer"
+                            >
+                                <LucideUpload className="mr-2 h-4 w-4" />
+                                {importing ? 'Importowanie...' : 'Importuj CSV'}
+                            </Button>
+                            <Button variant="outline" asChild className="cursor-pointer">
+                                <a href={downloadTemplate.url()}>
+                                    <LucideDownload className="mr-2 h-4 w-4" />
+                                    Pobierz wzór
+                                </a>
+                            </Button>
+                            <Button asChild className="cursor-pointer">
+                                <Link href={create.url()}>
+                                    <LucidePlus className="mr-2 h-4 w-4" />
+                                    Dodaj klienta
+                                </Link>
+                            </Button>
+                        </div>
                     )}
                 </div>
 

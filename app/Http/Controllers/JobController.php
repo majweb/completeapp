@@ -37,21 +37,63 @@ class JobController extends Controller
     {
         Gate::authorize('view', $job);
 
+        if ($job->status->value !== 'completed' && $job->status->value !== 'approved') {
+            return back()->with('error', 'Raport jest dostępny tylko dla zakończonych zleceń.');
+        }
+
         $job->load(['client', 'technician', 'template', 'checklist', 'company']);
+
+        // Walidacja checklisty
+        if ($job->checklist) {
+            foreach ($job->checklist->content as $item) {
+                $val = $item['value'] ?? null;
+                if (!empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                    return back()->with('error', 'Nie można wygenerować raportu. Checklista nie jest kompletna.');
+                }
+            }
+        }
 
         $pdf = Pdf::loadView('pdf.report', ['job' => $job]);
 
         return $pdf->stream("raport_zlecenie_{$job->id}.pdf");
     }
-    public function index()
+    public function index(Request $request)
     {
         Gate::authorize('viewAny', Job::class);
 
+        $user = auth()->user();
+        $query = $user->company->jobs()->with(['client', 'technician']);
+
+        // Wyszukiwanie
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereRelation('client', 'name', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtrowanie po statusie
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        // Filtrowanie po techniku (tylko owner/manager)
+        if ($user->role !== 'technician' && $request->filled('technician_id')) {
+            $query->where('assigned_to', $request->input('technician_id'));
+        }
+
+        // Technicy widzą tylko swoje zlecenia
+        if ($user->role === 'technician') {
+            $query->whereRelation('technician', 'id', $user->id);
+        }
+
         return Inertia::render('jobs/index', [
-            'jobs' => auth()->user()->company->jobs()
-                ->with(['client', 'technician'])
-                ->latest()
-                ->get(),
+            'jobs' => $query->latest()->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search', 'status', 'technician_id']),
+            'technicians' => $user->role !== 'technician'
+                ? $user->company->users()->whereIn('role', ['technician', 'manager', 'owner'])->get(['id', 'name'])
+                : [],
         ]);
     }
 
@@ -217,8 +259,37 @@ class JobController extends Controller
             if ($request->status === 'in_progress' && !$job->started_at && !isset($validated['started_at'])) {
                 $validated['started_at'] = now();
             }
-            if ($request->status === 'completed' && !$job->completed_at && !isset($validated['completed_at'])) {
-                $validated['completed_at'] = now();
+            if ($request->status === 'completed') {
+                if (!$job->started_at && !isset($validated['started_at'])) {
+                    Inertia::flash('toast', ['type' => 'error', 'message' => 'Nie można zakończyć zlecenia, które nie zostało rozpoczęte.']);
+                    return back();
+                }
+
+                $template = $job->template;
+                $workflowErrors = [];
+
+                if ($template->require_photo_before && $job->getMedia('images_before')->count() === 0) {
+                    $workflowErrors['media.images_before'] = 'Wymagane jest co najmniej jedno zdjęcie PRZED.';
+                }
+
+                if ($template->require_photo_after && $job->getMedia('images_after')->count() === 0) {
+                    $workflowErrors['media.images_after'] = 'Wymagane jest co najmniej jedno zdjęcie PO.';
+                }
+
+                if ($template->require_signature && !$job->hasMedia('signature')) {
+                    $workflowErrors['media.signature'] = 'Wymagany jest podpis klienta.';
+                }
+
+                if (!empty($workflowErrors)) {
+                    if ($request->header('X-Inertia')) {
+                        return back()->withErrors($workflowErrors);
+                    }
+                    return response()->json(['errors' => $workflowErrors], 422);
+                }
+
+                if (!$job->completed_at && !isset($validated['completed_at'])) {
+                    $validated['completed_at'] = now();
+                }
             }
         }
 
@@ -288,7 +359,21 @@ class JobController extends Controller
     {
         Gate::authorize('view', $job);
 
+        if ($job->status->value !== 'completed' && $job->status->value !== 'approved') {
+            return back()->with('error', 'Wysyłka raportu jest możliwa tylko dla zakończonych zleceń.');
+        }
+
         $job->load(['client', 'technician', 'template', 'checklist', 'company']);
+
+        // Walidacja checklisty
+        if ($job->checklist) {
+            foreach ($job->checklist->content as $item) {
+                $val = $item['value'] ?? null;
+                if (!empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                    return back()->with('error', 'Nie można wysłać raportu. Checklista nie jest kompletna.');
+                }
+            }
+        }
 
         if (!$job->client->email) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Klient nie posiada adresu email.']);

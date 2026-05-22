@@ -9,9 +9,10 @@ use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Mail\JobReportMail;
+use App\Mail\RequestSignatureMail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -167,6 +168,7 @@ class JobController extends Controller
 
         return Inertia::render('jobs/show', [
             'twilio_enabled' => config('services.twilio.enabled'),
+            'is_ready_for_signature' => $job->isReadyForSignature(),
             'job' => array_merge($job->toArray(), [
                 'media' => [
                     'images_before' => $job->getMedia('images_before')->map(fn ($m) => [
@@ -411,6 +413,39 @@ class JobController extends Controller
         $job->addMediaFromBase64($request->signature)
             ->usingFileName("signature_{$job->id}.png")
             ->toMediaCollection('signature');
+
+        return back();
+    }
+
+    public function requestSignature(Job $job)
+    {
+        Gate::authorize('update', $job);
+
+        if (!$job->isReadyForSignature()) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Zlecenie nie jest gotowe do podpisu. Uzupełnij checklistę i wymagane zdjęcia.'
+            ]);
+            return back();
+        }
+
+        if (!$job->client->email) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Klient nie posiada adresu email.']);
+            return back();
+        }
+
+        $url = URL::temporarySignedRoute(
+            'client.signature.show',
+            now()->addDays(1),
+            ['job' => $job->id]
+        );
+
+        try {
+            Mail::to($job->client->email)->send(new RequestSignatureMail($job, $url));
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Prośba o podpis została wysłana do klienta.']);
+        } catch (\Exception $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Błąd podczas wysyłki: ' . $e->getMessage()]);
+        }
 
         return back();
     }

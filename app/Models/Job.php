@@ -59,6 +59,33 @@ class Job extends Model implements HasMedia
         return $this->hasOne(Checklist::class);
     }
 
+    public function isReadyForSignature(): bool
+    {
+        $template = $this->template;
+
+        // 1. Walidacja checklisty (jeśli istnieje)
+        if ($this->checklist) {
+            foreach ($this->checklist->content as $item) {
+                $val = $item['value'] ?? null;
+                if (!empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                    return false;
+                }
+            }
+        }
+
+        // 2. Zdjęcia przed
+        if ($template->require_photo_before && $this->getMedia('images_before')->count() === 0) {
+            return false;
+        }
+
+        // 3. Zdjęcia po
+        if ($template->require_photo_after && $this->getMedia('images_after')->count() === 0) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('images_before');

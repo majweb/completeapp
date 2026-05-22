@@ -3,7 +3,7 @@ import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
 
-import { update, uploadMedia, saveSignature, deleteMedia, reorderMedia, sendReport } from '@/actions/App/Http/Controllers/JobController';
+import { update, uploadMedia, saveSignature, deleteMedia, reorderMedia, sendReport, requestSignature } from '@/actions/App/Http/Controllers/JobController';
 import JobMap from '@/components/job-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -83,6 +83,7 @@ interface Job {
 interface Props extends PageProps {
     job: Job;
     twilio_enabled: boolean;
+    is_ready_for_signature: boolean;
     features?: {
         openai?: boolean;
     };
@@ -95,7 +96,7 @@ const statusLabels: Record<string, string> = {
     approved: 'Zatwierdzone',
 };
 
-export default function Show({ job, twilio_enabled, auth, features }: Props) {
+export default function Show({ job, twilio_enabled, is_ready_for_signature, auth, features }: Props) {
     const user = auth.user as any;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
     const isOpenAiEnabled = features?.openai ?? false;
@@ -362,6 +363,12 @@ export default function Show({ job, twilio_enabled, auth, features }: Props) {
         });
     };
 
+    const handleRequestSignature = () => {
+        router.post(requestSignature(job.id).url, {}, {
+            preserveScroll: true,
+        });
+    };
+
     const handleGenerateAISummary = () => {
         router.post(generateSummaryRoute(job.id).url, {}, {
             preserveScroll: true,
@@ -413,7 +420,7 @@ export default function Show({ job, twilio_enabled, auth, features }: Props) {
             <Head title={`Zlecenie #${job.id}`} />
 
             <Dialog open={mediaToDelete !== null} onOpenChange={(open) => !open && setMediaToDelete(null)}>
-                <DialogContent>
+                <DialogContent className="[&>button]:cursor-pointer">
                     <DialogHeader>
                         <DialogTitle>Czy na pewno chcesz usunąć to zdjęcie?</DialogTitle>
                         <DialogDescription>
@@ -428,7 +435,7 @@ export default function Show({ job, twilio_enabled, auth, features }: Props) {
             </Dialog>
 
             <Dialog open={isFinishDialogOpen} onOpenChange={setIsFinishDialogOpen}>
-                <DialogContent>
+                <DialogContent className="[&>button]:cursor-pointer">
                     <DialogHeader>
                         <DialogTitle>Czy na pewno chcesz zakończyć zlecenie?</DialogTitle>
                         <DialogDescription>
@@ -685,7 +692,8 @@ export default function Show({ job, twilio_enabled, auth, features }: Props) {
                                                             id={item.id}
                                                             checked={!!item.value}
                                                             onCheckedChange={(checked) => job.started_at && updateChecklist(index, !!checked)}
-                                                            className={`${(errors as any)[`checklist_content.${index}.value`] ? 'border-destructive' : ''}`}
+                                                            aria-invalid={!!(errors as any)[`checklist_content.${index}.value`]}
+                                                            className=""
                                                             disabled={!job.started_at}
                                                         />
                                                         <div className="flex flex-1 items-center justify-between">
@@ -715,7 +723,8 @@ export default function Show({ job, twilio_enabled, auth, features }: Props) {
                                                         <Input
                                                             id={item.id}
                                                             type={item.type === 'number' ? 'number' : 'text'}
-                                                            className={`${item.type === 'text' ? 'pr-12' : ''} ${(errors as any)[`checklist_content.${index}.value`] ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                                            className={`${item.type === 'text' ? 'pr-12' : ''}`}
+                                                            aria-invalid={!!(errors as any)[`checklist_content.${index}.value`]}
                                                             value={item.value || ''}
                                                             onChange={(e) => updateChecklist(index, e.target.value)}
                                                             required={item.required}
@@ -939,26 +948,49 @@ export default function Show({ job, twilio_enabled, auth, features }: Props) {
                                             <p className="text-[10px] text-center text-muted-foreground mt-1">Podpisano</p>
                                         </div>
                                     ) : (
-                                        <Dialog open={isSignatureOpen} onOpenChange={(open) => job.started_at && setIsSignatureOpen(open)}>
-                                            <DialogTrigger asChild>
-                                                <Button variant="secondary" disabled={!job.started_at} className={`w-full h-24 border-2 border-dashed flex-col ${!job.started_at ? 'cursor-not-allowed' : 'cursor-pointer'} ${ (errors as any)['media.signature'] ? 'border-destructive bg-destructive/5 text-destructive' : ''}`}>
-                                                    <LucidePencil className="h-6 w-6 mb-1" />
-                                                    Zbierz podpis
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="sm:max-w-md">
-                                                <DialogHeader>
-                                                    <DialogTitle>Podpis klienta</DialogTitle>
-                                                </DialogHeader>
-                                                <div className="bg-white border rounded-lg overflow-hidden">
-                                                    <canvas ref={signatureRef} className="w-full h-80 touch-none cursor-crosshair" />
-                                                </div>
-                                                <div className="flex justify-between gap-2 mt-4">
-                                                    <Button variant="outline" onClick={() => signaturePadRef.current?.clear()} className="cursor-pointer">Wyczyść</Button>
-                                                    <Button onClick={handleSaveSignature} className="cursor-pointer">Zapisz podpis</Button>
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
+                                        <div className="space-y-2">
+                                            <Dialog open={isSignatureOpen} onOpenChange={(open) => job.started_at && is_ready_for_signature && setIsSignatureOpen(open)}>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="secondary" disabled={!job.started_at || !is_ready_for_signature} className={`w-full h-24 border-2 border-dashed flex-col ${!job.started_at || !is_ready_for_signature ? 'cursor-not-allowed' : 'cursor-pointer'} ${ (errors as any)['media.signature'] ? 'border-destructive bg-destructive/5 text-destructive' : ''}`}>
+                                                        <LucidePencil className="h-6 w-6 mb-1" />
+                                                        Zbierz podpis na miejscu
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-md [&>button]:cursor-pointer">
+                                                    <DialogHeader>
+                                                        <DialogTitle>Podpis klienta</DialogTitle>
+                                                    </DialogHeader>
+                                                    <div className="bg-white border rounded-lg overflow-hidden">
+                                                        <canvas ref={signatureRef} className="w-full h-80 touch-none cursor-crosshair" />
+                                                    </div>
+                                                    <div className="flex justify-between gap-2 mt-4">
+                                                        <Button variant="outline" onClick={() => signaturePadRef.current?.clear()} className="cursor-pointer">Wyczyść</Button>
+                                                        <Button onClick={handleSaveSignature} className="cursor-pointer">Zapisz podpis</Button>
+                                                    </div>
+                                                    <p className="text-sm font-medium text-foreground leading-tight text-center px-4 mt-4 bg-muted/50 p-3 rounded-lg border border-primary/20">
+                                                        Podpis ma charakter informacyjny i stanowi jedynie potwierdzenie fizycznego wykonania prac. Nie stanowi on wiążącego oświadczenia woli.
+                                                    </p>
+                                                </DialogContent>
+                                            </Dialog>
+
+                                            <Button
+                                                variant="outline"
+                                                className={`w-full text-xs ${!is_ready_for_signature ? 'opacity-50' : ''}`}
+                                                onClick={handleRequestSignature}
+                                                disabled={!job.started_at || processing || !is_ready_for_signature}
+                                            >
+                                                <LucideMail className="mr-2 h-3.5 w-3.5" />
+                                                Poproś o podpis zdalny
+                                            </Button>
+                                            {!is_ready_for_signature && job.started_at && (
+                                                <p className="text-[10px] text-muted-foreground text-center px-2">
+                                                    Uzupełnij checklistę i wymagane zdjęcia, aby móc zebrać podpis.
+                                                </p>
+                                            )}
+                                            <p className="text-xs font-medium text-foreground leading-tight text-center px-3 mt-3 bg-muted/30 p-2 rounded-md border border-primary/10">
+                                                Podpis ma charakter informacyjny i stanowi jedynie potwierdzenie fizycznego wykonania prac. Nie stanowi on wiążącego oświadczenia woli.
+                                            </p>
+                                        </div>
                                     )}
                                     { (errors as any)['media.signature'] && (
                                         <p className="text-xs text-destructive mt-2 font-medium">{ (errors as any)['media.signature']}</p>

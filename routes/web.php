@@ -7,6 +7,7 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\JobTemplateController;
+use App\Http\Controllers\ClientSignatureController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -28,6 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('jobs/{job}/report', [JobController::class, 'downloadReport'])->name('jobs.report');
     Route::post('jobs/{job}/report/send', [JobController::class, 'sendReport'])->name('jobs.sendReport');
     Route::post('jobs/{job}/generate-summary', [JobController::class, 'generateSummary'])->name('jobs.generateSummary');
+    Route::post('jobs/{job}/request-signature', [JobController::class, 'requestSignature'])->name('jobs.requestSignature');
 
     Route::get('/company/settings', [CompanyController::class, 'edit'])->name('company.edit');
     Route::post('/company/settings', [CompanyController::class, 'update'])->name('company.update');
@@ -46,5 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook']);
+
+Route::get('public/jobs/{job}/signature', [ClientSignatureController::class, 'show'])->name('client.signature.show');
+Route::post('public/jobs/{job}/signature', [ClientSignatureController::class, 'store'])->name('client.signature.store');
 
 require __DIR__.'/settings.php';

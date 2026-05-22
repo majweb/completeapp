@@ -1,10 +1,12 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LucidePlus, LucideTrash2, LucidePencil, LucideUser, LucideMail, LucideLock, LucideShieldCheck } from 'lucide-react';
+import { LucidePlus, LucideTrash2, LucidePencil, LucideUser, LucideMail, LucideLock, LucideShieldCheck, LucideRefreshCw } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { store, update, destroy as destroyAction } from '@/actions/App/Http/Controllers/TechnicianController';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +19,7 @@ interface Technician {
     name: string;
     email: string;
     role: string;
+    is_active: boolean;
 }
 
 interface Props {
@@ -33,7 +36,20 @@ export default function Index({ technicians }: Props) {
         email: '',
         password: '',
         role: 'technician',
+        is_active: true,
+        send_credentials: false,
     });
+
+    const generatePassword = () => {
+        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
+        let retVal = '';
+
+        for (let i = 0; i < 12; ++i) {
+            retVal += charset.charAt(Math.floor(Math.random() * charset.length));
+        }
+
+        setData('password', retVal);
+    };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,6 +80,7 @@ export default function Index({ technicians }: Props) {
             email: tech.email,
             password: '',
             role: tech.role,
+            is_active: !!tech.is_active,
         });
         setIsCreateOpen(true);
     };
@@ -139,16 +156,28 @@ export default function Index({ technicians }: Props) {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="password">{editingTechnician ? 'Nowe hasło (opcjonalnie)' : 'Hasło'}</Label>
-                                    <div className="relative">
-                                        <LucideLock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="password"
-                                            type="password"
-                                            value={data.password}
-                                            onChange={(e) => setData('password', e.target.value)}
-                                            className="pl-10"
-                                            placeholder="min. 8 znaków"
-                                        />
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <LucideLock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                id="password"
+                                                type={editingTechnician ? 'password' : 'text'}
+                                                value={data.password}
+                                                onChange={(e) => setData('password', e.target.value)}
+                                                className="pl-10"
+                                                placeholder="min. 8 znaków"
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={generatePassword}
+                                            title="Generuj losowe hasło"
+                                            className="cursor-pointer"
+                                        >
+                                            <LucideRefreshCw className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                                 </div>
@@ -167,6 +196,37 @@ export default function Index({ technicians }: Props) {
                                         </SelectContent>
                                     </Select>
                                     {errors.role && <p className="text-xs text-destructive">{errors.role}</p>}
+                                </div>
+                                <div className="flex flex-col gap-4 py-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="is_active"
+                                            checked={data.is_active}
+                                            onCheckedChange={(checked) => setData('is_active', !!checked)}
+                                        />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="is_active" className="cursor-pointer font-medium">Konto aktywne</Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Nieaktywni użytkownicy nie mogą logować się do systemu.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {!editingTechnician && (
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="send_credentials"
+                                                checked={data.send_credentials}
+                                                onCheckedChange={(checked) => setData('send_credentials', !!checked)}
+                                            />
+                                            <div className="grid gap-1.5 leading-none">
+                                                <Label htmlFor="send_credentials" className="cursor-pointer font-medium">Wyślij dane do logowania</Label>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Użytkownik otrzyma e-mail z hasłem i instrukcją logowania.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <DialogFooter>
                                     <Button type="submit" disabled={processing} className="cursor-pointer">
@@ -189,6 +249,7 @@ export default function Index({ technicians }: Props) {
                                     <TableHead>Pracownik</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Rola</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Akcje</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -203,6 +264,11 @@ export default function Index({ technicians }: Props) {
                                             }`}>
                                                 {tech.role === 'manager' ? 'Manager' : 'Technik'}
                                             </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={tech.is_active ? 'default' : 'destructive'} className="rounded-full">
+                                                {tech.is_active ? 'Aktywny' : 'Zablokowany'}
+                                            </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">

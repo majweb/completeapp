@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Mail\UserCredentialsMail;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Inertia\Inertia;
 
 class TechnicianController extends Controller
 {
@@ -45,6 +47,7 @@ class TechnicianController extends Controller
                 'type' => 'error',
                 'message' => 'Osiągnięto limit techników dla Twojego planu.',
             ]);
+
             return redirect()->back();
         }
 
@@ -53,15 +56,22 @@ class TechnicianController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|string|in:technician,manager',
+            'is_active' => 'boolean',
+            'send_credentials' => 'boolean',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'company_id' => auth()->user()->company_id,
             'role' => $validated['role'],
+            'is_active' => $validated['is_active'] ?? true,
         ]);
+
+        if ($request->boolean('send_credentials')) {
+            Mail::to($user->email)->send(new UserCredentialsMail($user, $validated['password']));
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Pracownik został dodany.']);
 
@@ -74,15 +84,17 @@ class TechnicianController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $technician->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$technician->id,
             'password' => 'nullable|string|min:8',
             'role' => 'required|string|in:technician,manager',
+            'is_active' => 'boolean',
         ]);
 
         $technician->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
+            'is_active' => $validated['is_active'] ?? $technician->is_active,
         ]);
 
         if ($request->filled('password')) {

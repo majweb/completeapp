@@ -23,18 +23,18 @@ export default function TwoFactorChallenge() {
     }>(() => {
         if (showRecoveryInput) {
             return {
-                title: 'Recovery code',
+                title: 'Kod odzyskiwania',
                 description:
-                    'Please confirm access to your account by entering one of your emergency recovery codes.',
-                toggleText: 'login using an authentication code',
+                    'Proszę potwierdzić dostęp do konta, wpisując jeden z awaryjnych kodów odzyskiwania.',
+                toggleText: 'zaloguj się przy użyciu kodu uwierzytelniającego',
             };
         }
 
         return {
-            title: 'Authentication code',
+            title: 'Kod uwierzytelniający',
             description:
-                'Enter the authentication code provided by your authenticator application.',
-            toggleText: 'login using a recovery code',
+                'Wprowadź kod uwierzytelniający dostarczony przez aplikację uwierzytelniającą.',
+            toggleText: 'zaloguj się przy użyciu kodu odzyskiwania',
         };
     }, [showRecoveryInput]);
 
@@ -51,7 +51,7 @@ export default function TwoFactorChallenge() {
 
     return (
         <>
-            <Head title="Two-factor authentication" />
+            <Head title="Uwierzytelnianie dwuskładnikowe" />
 
             <div className="space-y-6">
                 <Form
@@ -67,9 +67,8 @@ export default function TwoFactorChallenge() {
                                     <Input
                                         name="recovery_code"
                                         type="text"
-                                        placeholder="Enter recovery code"
+                                        placeholder="Wprowadź kod odzyskiwania"
                                         autoFocus={showRecoveryInput}
-                                        required
                                     />
                                     <InputError
                                         message={errors.recovery_code}
@@ -109,11 +108,11 @@ export default function TwoFactorChallenge() {
                                 className="w-full"
                                 disabled={processing}
                             >
-                                Continue
+                                Kontynuuj
                             </Button>
 
                             <div className="text-center text-sm text-muted-foreground">
-                                <span>or you can </span>
+                                <span>lub możesz </span>
                                 <button
                                     type="button"
                                     className="cursor-pointer text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"

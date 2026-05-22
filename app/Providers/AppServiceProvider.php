@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Services\SubscriptionService;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -28,8 +30,20 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Inertia::share([
-            'isFreeMode' => fn() => app(SubscriptionService::class)->isFreeMode(),
+            'isFreeMode' => fn () => app(SubscriptionService::class)->isFreeMode(),
         ]);
+
+        ResetPassword::toMailUsing(function ($notifiable, $token) {
+            return (new MailMessage)
+                ->subject('Resetowanie hasła')
+                ->line('Otrzymujesz ten e-mail, ponieważ otrzymaliśmy prośbę o zresetowanie hasła dla Twojego konta.')
+                ->action('Resetuj hasło', url(config('app.url').route('password.reset', [
+                    'token' => $token,
+                    'email' => $notifiable->getEmailForPasswordReset(),
+                ], false)))
+                ->line('Ten link do resetowania hasła wygaśnie za :count minut.', ['count' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire')])
+                ->line('Jeśli nie prosiłeś o zresetowanie hasła, nie musisz podejmować żadnych dalszych działań.');
+        });
     }
 
     /**

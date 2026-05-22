@@ -14,27 +14,27 @@ import { store } from '@/routes/password/confirm';
 export default function ConfirmPassword() {
     return (
         <>
-            <Head title="Confirm password" />
+            <Head title="Potwierdź hasło" />
 
             <PasskeyVerify
                 routes={{
                     options: confirmOptions(),
                     submit: confirmStore(),
                 }}
-                label="Confirm with passkey"
-                loadingLabel="Confirming..."
-                separator="Or confirm with password"
+                label="Potwierdź za pomocą klucza dostępu"
+                loadingLabel="Potwierdzanie..."
+                separator="Lub potwierdź hasłem"
             />
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">Hasło</Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
-                                placeholder="Password"
+                                placeholder="Hasło"
                                 autoComplete="current-password"
                                 autoFocus
                             />
@@ -49,7 +49,7 @@ export default function ConfirmPassword() {
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}
-                                Confirm password
+                                Potwierdź hasło
                             </Button>
                         </div>
                     </div>
@@ -60,7 +60,7 @@ export default function ConfirmPassword() {
 }
 
 ConfirmPassword.layout = {
-    title: 'Confirm your password',
+    title: 'Potwierdź swoje hasło',
     description:
-        'This is a secure area of the application. Please confirm your password before continuing.',
+        'To jest bezpieczny obszar aplikacji. Proszę potwierdzić swoje hasło przed kontynuowaniem.',
 };

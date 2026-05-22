@@ -1,9 +1,10 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Bell, Briefcase, CheckCircle, Clock, MapPin, Users } from 'lucide-react';
+import { Bell, Briefcase, CheckCircle, Clock, MapPin, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Area, AreaChart, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
 
 import { show as jobShow } from '@/actions/App/Http/Controllers/JobController';
+import JobMap from '@/components/job-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,13 +58,15 @@ interface DashboardProps {
     activity_data: { date: string; count: number }[];
     recent_jobs: any[];
     next_jobs: any[];
+    map_jobs?: any[];
 }
 
-export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs }: DashboardProps) {
+export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs, map_jobs = [] }: DashboardProps) {
     const { auth } = usePage<any>().props;
     const isTechnician = auth.user.role === 'technician';
     const [lastKnownJobId, setLastKnownJobId] = useState(stats.latest_job_id);
     const [hasNewJobs, setHasNewJobs] = useState(false);
+    const [isMapVisible, setIsMapVisible] = useState(true);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -71,6 +74,7 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
                 only: ['stats'],
                 onSuccess: (page) => {
                     const newLatestId = (page.props.stats as any).latest_job_id;
+
                     if (newLatestId > lastKnownJobId) {
                         setHasNewJobs(true);
                     }
@@ -111,6 +115,38 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
                     <StatCard title="Ukończone Dzisiaj" value={stats.completed_today} icon={<CheckCircle />} />
                     <StatCard title="Wszyscy Klienci" value={stats.total_clients} icon={<Users />} />
                 </div>
+
+                {map_jobs.length > 0 && (
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                            <div className="space-y-1">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <MapPin className="h-5 w-5 text-primary" />
+                                    Mapa aktywnych zleceń
+                                </CardTitle>
+                                <CardDescription>Lokalizacja aktualnie trwających prac w Twojej firmie.</CardDescription>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsMapVisible(!isMapVisible)}
+                                className="h-8 w-8 p-0"
+                            >
+                                {isMapVisible ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                )}
+                                <span className="sr-only">Przełącz widoczność mapy</span>
+                            </Button>
+                        </CardHeader>
+                        {isMapVisible && (
+                            <CardContent>
+                                <JobMap jobs={map_jobs} height="450px" zoom={11} />
+                            </CardContent>
+                        )}
+                    </Card>
+                )}
 
                 {isTechnician && next_jobs.length > 0 && (
                     <div className="grid gap-4 md:grid-cols-1">

@@ -1,3 +1,3 @@
-﻿nazwa,email,telefon,adres,notatki
-Jan Kowalski,jan@example.com,123456789,ul. Kwiatowa 1 Warszawa,Stały klient
-Anna Nowak,anna@example.com,987654321,ul. Długa 5 Kraków,Potencjalny klient
+﻿nazwa,email,telefon,adres,notatki,latitude,longitude
+Jan Kowalski,jan@example.com,123456789,ul. Kwiatowa 1 Warszawa,Stały klient,52.2297,21.0122
+Anna Nowak,anna@example.com,987654321,ul. Długa 5 Kraków,Potencjalny klient,50.0647,19.9450

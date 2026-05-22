@@ -39,8 +39,8 @@ export function UserMenuContent({ user }: Props) {
                         href={edit()}
                         onClick={cleanup}
                     >
-                        <Settings className="mr-2" />
-                        Settings
+                        <Settings className="mr-2 h-4 w-4" />
+                        Ustawienia profilu
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
@@ -49,12 +49,13 @@ export function UserMenuContent({ user }: Props) {
                 <Link
                     className="block w-full cursor-pointer"
                     href={logout()}
+                    method="post"
                     as="button"
                     onClick={handleLogout}
                     data-test="logout-button"
                 >
-                    <LogOut className="mr-2" />
-                    Log out
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Wyloguj się
                 </Link>
             </DropdownMenuItem>
         </>

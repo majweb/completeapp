@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Imports\ClientsImport;
+use App\Services\GeocodingService;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -11,6 +12,13 @@ use Inertia\Inertia;
 
 class ClientController extends Controller
 {
+    protected $geocodingService;
+
+    public function __construct(GeocodingService $geocodingService)
+    {
+        $this->geocodingService = $geocodingService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -47,8 +55,19 @@ class ClientController extends Controller
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
             'notes' => 'nullable|string',
         ]);
+
+        if (empty($validated['latitude']) && !empty($validated['address'])) {
+            $coords = $this->geocodingService->geocode($validated['address']);
+            if ($coords) {
+                $validated['latitude'] = $coords['lat'];
+                $validated['longitude'] = $coords['lon'];
+                Inertia::flash('toast', ['type' => 'info', 'message' => 'Automatycznie pobrano współrzędne geograficzne na podstawie adresu.']);
+            }
+        }
 
         Client::create($validated);
 
@@ -93,8 +112,19 @@ class ClientController extends Controller
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
             'notes' => 'nullable|string',
         ]);
+
+        if (!empty($validated['address']) && $validated['address'] !== $client->address && empty($validated['latitude'])) {
+            $coords = $this->geocodingService->geocode($validated['address']);
+            if ($coords) {
+                $validated['latitude'] = $coords['lat'];
+                $validated['longitude'] = $coords['lon'];
+                Inertia::flash('toast', ['type' => 'info', 'message' => 'Automatycznie zaktualizowano współrzędne geograficzne na podstawie nowego adresu.']);
+            }
+        }
 
         $client->update($validated);
 
@@ -168,6 +198,9 @@ class ClientController extends Controller
                 'phone' => $data[2] ?? null,
                 'address' => $data[3] ?? null,
                 'notes' => $data[4] ?? null,
+                'latitude' => $data[5] ?? null,
+                'longitude' => $data[6] ?? null,
+                'company_id' => auth()->user()->company_id,
             ];
 
             try {

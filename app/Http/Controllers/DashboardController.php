@@ -69,11 +69,33 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Jobs for map (Manager/Owner only)
+        $map_jobs = [];
+        if ($user->role === 'owner' || $user->role === 'manager') {
+            $map_jobs = Job::query()
+                ->with('client:id,name,address,latitude,longitude')
+                ->whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS])
+                ->whereHas('client', function($query) {
+                    $query->whereNotNull('latitude')->whereNotNull('longitude');
+                })
+                ->get()
+                ->map(fn($job) => [
+                    'id' => $job->id,
+                    'status' => $job->status->value,
+                    'status_label' => $job->status->label(),
+                    'client_name' => $job->client->name,
+                    'address' => $job->client->address,
+                    'latitude' => (float) $job->client->latitude,
+                    'longitude' => (float) $job->client->longitude,
+                ]);
+        }
+
         return Inertia::render('dashboard', [
             'stats' => $stats,
             'activity_data' => $activity_data,
             'recent_jobs' => $recent_jobs,
             'next_jobs' => $next_jobs,
+            'map_jobs' => $map_jobs,
         ]);
     }
 }

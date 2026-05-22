@@ -22,6 +22,8 @@ class ClientsImport implements ToModel, WithHeadingRow, WithValidation
             'email'      => $row['email'],
             'phone'      => $row['telefon'] ?? $row['phone'] ?? null,
             'address'    => $row['adres'] ?? $row['address'] ?? null,
+            'latitude'   => $row['latitude'] ?? $row['szerokosc'] ?? null,
+            'longitude'  => $row['longitude'] ?? $row['dlugosc'] ?? null,
             'notes'      => $row['notatki'] ?? $row['notes'] ?? null,
             'company_id' => auth()->user()->company_id,
         ]);

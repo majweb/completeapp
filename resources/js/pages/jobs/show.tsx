@@ -1,9 +1,10 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock } from 'lucide-react';
+import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock, LucideExternalLink } from 'lucide-react';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
 
 import { update, uploadMedia, saveSignature, deleteMedia, reorderMedia, sendReport } from '@/actions/App/Http/Controllers/JobController';
+import JobMap from '@/components/job-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +55,8 @@ interface Job {
         name: string;
         address: string | null;
         phone: string | null;
+        latitude: number | null;
+        longitude: number | null;
     };
     technician: {
         name: string;
@@ -1018,8 +1021,45 @@ export default function Show({ job, twilio_enabled, auth, features }: Props) {
                                 <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground uppercase">Klient</Label>
                                     <p className="font-semibold">{job.client?.name}</p>
-                                    <p className="text-sm">{job.client?.address}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm flex-1">{job.client?.address}</p>
+                                        {job.client?.address && (
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                title="Otwórz w Google Maps"
+                                                asChild
+                                            >
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.client.address)}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                >
+                                                    <LucideExternalLink className="h-3.5 w-3.5" />
+                                                </a>
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
+                                {job.client?.latitude && job.client?.longitude && (
+                                    <div className="mt-2">
+                                        <JobMap
+                                            jobs={[{
+                                                id: job.id,
+                                                status: job.status,
+                                                status_label: statusLabels[job.status] || job.status,
+                                                client_name: job.client.name,
+                                                address: job.client.address || '',
+                                                latitude: job.client.latitude,
+                                                longitude: job.client.longitude
+                                            }]}
+                                            height="150px"
+                                            zoom={14}
+                                            center={[job.client.latitude, job.client.longitude]}
+                                        />
+                                    </div>
+                                )}
                                 <Separator />
                                 <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground uppercase">Termin</Label>

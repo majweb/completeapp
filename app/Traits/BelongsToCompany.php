@@ -12,7 +12,7 @@ trait BelongsToCompany
     public static function bootBelongsToCompany(): void
     {
         static::addGlobalScope('company', function (Builder $builder) {
-            if (auth()->hasUser()) {
+            if (auth()->hasUser() && auth()->user()->role !== 'admin') {
                 $builder->where($builder->getQuery()->from . '.company_id', auth()->user()->company_id);
             }
         });

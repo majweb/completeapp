@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CompanyController;
@@ -45,6 +46,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
     Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
     Route::get('/contact/captcha-refresh', [ContactController::class, 'refreshCaptcha'])->name('contact.captcha-refresh');
+
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('users', [AdminController::class, 'users'])->name('users');
+        Route::get('jobs', [AdminController::class, 'jobs'])->name('jobs');
+        Route::post('impersonate/{user}', [AdminController::class, 'impersonate'])->name('impersonate');
+    });
+    Route::post('stop-impersonating', [AdminController::class, 'stopImpersonating'])->name('admin.stop-impersonating');
 });
 
 Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook']);

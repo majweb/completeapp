@@ -16,6 +16,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard, rolesGuide } from '@/routes';
+import { jobs as adminJobs, users as adminUsers } from '@/routes/admin';
 import { edit as companySettingsRoute } from '@/routes/company';
 import { show as contactShow } from '@/routes/contact';
 import { index as jobTemplatesIndex } from '@/routes/job-templates';
@@ -30,70 +31,87 @@ export function AppSidebar() {
     const { auth, isFreeMode } = usePage().props as any;
     const user = auth.user;
 
-    const mainNavItems: NavItem[] = [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-            icon: LayoutGrid,
-        },
-        {
-            title: 'Zlecenia',
-            href: jobsIndex(),
-            icon: ClipboardList,
-        },
-        {
-            title: 'Przewodnik po rolach',
-            href: rolesGuide(),
-            icon: Info,
-        },
-        {
-            title: 'Kontakt i opinie',
-            href: contactShow(),
-            icon: MessageSquare,
-        },
-    ];
+    const mainNavItems: NavItem[] = [];
 
-    if (user.role === 'owner' || user.role === 'manager') {
+    if (user.role === 'admin') {
         mainNavItems.push(
             {
-                title: 'Szablony zleceń',
-                href: jobTemplatesIndex(),
-                icon: FileText,
-            },
-            {
-                title: 'Ekipa (Technicy)',
-                href: technicianIndex(),
-                icon: HardHat,
-            },
-            {
-                title: 'Klienci',
-                href: clientsIndex.url(),
+                title: 'Użytkownicy (Admin)',
+                href: adminUsers(),
                 icon: Users,
+            },
+            {
+                title: 'Zlecenia (Admin)',
+                href: adminJobs(),
+                icon: ClipboardList,
+            }
+        );
+    } else {
+        mainNavItems.push(
+            {
+                title: 'Dashboard',
+                href: dashboard(),
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Zlecenia',
+                href: jobsIndex(),
+                icon: ClipboardList,
+            },
+            {
+                title: 'Przewodnik po rolach',
+                href: rolesGuide(),
+                icon: Info,
+            },
+            {
+                title: 'Kontakt i opinie',
+                href: contactShow(),
+                icon: MessageSquare,
             }
         );
 
-        if (user.role === 'owner') {
-            mainNavItems.push({
-                title: 'Ustawienia firmy',
-                href: companySettingsRoute.url(),
-                icon: Settings,
-            });
+        if (user.role === 'owner' || user.role === 'manager') {
+            mainNavItems.push(
+                {
+                    title: 'Szablony zleceń',
+                    href: jobTemplatesIndex(),
+                    icon: FileText,
+                },
+                {
+                    title: 'Ekipa (Technicy)',
+                    href: technicianIndex(),
+                    icon: HardHat,
+                },
+                {
+                    title: 'Klienci',
+                    href: clientsIndex.url(),
+                    icon: Users,
+                }
+            );
 
-            if (!isFreeMode) {
+            if (user.role === 'owner') {
                 mainNavItems.push({
-                    title: 'Subskrypcja',
-                    href: subscriptionIndex(),
-                    icon: CreditCard,
+                    title: 'Ustawienia firmy',
+                    href: companySettingsRoute.url(),
+                    icon: Settings,
                 });
+
+                if (!isFreeMode) {
+                    mainNavItems.push({
+                        title: 'Subskrypcja',
+                        href: subscriptionIndex(),
+                        icon: CreditCard,
+                    });
+                }
             }
+        } else if (user.role === 'technician') {
+            // Technicians can also see clients (view only)
+            mainNavItems.push({
+                title: 'Klienci',
+                href: clientsIndex.url(),
+                icon: Users,
+            });
         }
-    } else if (user.role === 'technician') {
-        // Technicians can also see clients (view only)
-        mainNavItems.push({
-            title: 'Klienci',
-            href: clientsIndex.url(),
-            icon: Users,
-        });
     }
 
     return (

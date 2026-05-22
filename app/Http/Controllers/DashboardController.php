@@ -15,6 +15,10 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.users');
+        }
+
         $statsQuery = Job::query();
         $activityQuery = Job::query();
         $recentQuery = Job::query();

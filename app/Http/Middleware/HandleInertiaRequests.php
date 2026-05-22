@@ -45,6 +45,7 @@ class HandleInertiaRequests extends Middleware
                     'avatar_url' => $request->user()->avatar_url,
                     'company' => $request->user()->company,
                 ] : null,
+                'impersonated_by' => session('impersonated_by'),
             ],
             'subscription' => $request->user() && $request->user()->company ? [
                 'exceedsTechniciansLimit' => app(SubscriptionService::class)->exceedsLimit($request->user()->company, 'technicians'),

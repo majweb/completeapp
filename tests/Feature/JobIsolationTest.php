@@ -51,7 +51,7 @@ class JobIsolationTest extends TestCase
         $response->assertStatus(200);
 
         // Should see job 1 but not job 2
-        $jobs = $response->viewData('page')['props']['jobs'];
+        $jobs = $response->viewData('page')['props']['jobs']['data'];
         $this->assertCount(1, $jobs);
         $this->assertEquals($job1->id, $jobs[0]['id']);
 
@@ -86,7 +86,7 @@ class JobIsolationTest extends TestCase
         $response = $this->get(route('jobs.index'));
 
         $response->assertStatus(200);
-        $jobs = $response->viewData('page')['props']['jobs'];
+        $jobs = $response->viewData('page')['props']['jobs']['data'];
         $this->assertCount(3, $jobs);
     }
 }

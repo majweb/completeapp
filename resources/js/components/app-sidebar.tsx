@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Users, ClipboardList, FileText, HardHat, Settings, CreditCard } from 'lucide-react';
+import { LayoutGrid, Users, ClipboardList, FileText, HardHat, Settings, CreditCard, Info } from 'lucide-react';
 import { index as clientsIndex } from '@/actions/App/Http/Controllers/ClientController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -14,7 +14,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { dashboard, rolesGuide } from '@/routes';
 import { edit as companySettingsRoute } from '@/routes/company';
 import { index as jobTemplatesIndex } from '@/routes/job-templates';
 import { index as jobsIndex } from '@/routes/jobs';
@@ -38,6 +38,11 @@ export function AppSidebar() {
             title: 'Zlecenia',
             href: jobsIndex(),
             icon: ClipboardList,
+        },
+        {
+            title: 'Przewodnik po rolach',
+            href: rolesGuide(),
+            icon: Info,
         },
     ];
 

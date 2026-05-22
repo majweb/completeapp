@@ -36,6 +36,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/subscription', [CompanyController::class, 'subscribe'])->name('subscription.subscribe');
     Route::get('/subscription/invoices', [CompanyController::class, 'invoices'])->name('subscription.invoices');
     Route::get('/subscription/invoices/{invoice}', [CompanyController::class, 'downloadInvoice'])->name('subscription.invoices.download');
+
+    Route::inertia('/roles-guide', 'roles-guide')->name('roles-guide');
 });
 
 Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook']);

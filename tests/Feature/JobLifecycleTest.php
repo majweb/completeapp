@@ -42,7 +42,7 @@ test('can list jobs', function () {
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
         ->component('jobs/index', true)
-        ->has('jobs', 1)
+        ->has('jobs.data', 1)
     );
 });
 
@@ -223,7 +223,7 @@ test('cannot see jobs from another company', function () {
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
         ->component('jobs/index', true)
-        ->has('jobs', 0)
+        ->has('jobs.data', 0)
     );
 
     $response = $this->get(route('jobs.show', $otherJob));

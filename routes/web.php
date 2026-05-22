@@ -14,43 +14,46 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::middleware([App\Http\Middleware\RedirectAdminToDashboard::class])->group(function () {
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    Route::post('clients/import', [ClientController::class, 'import'])->name('clients.import');
-    Route::get('clients/template', [ClientController::class, 'downloadTemplate'])->name('clients.template');
-    Route::resource('clients', ClientController::class);
-    Route::resource('jobs', JobController::class);
-    Route::resource('job-templates', JobTemplateController::class);
-    Route::resource('technicians', TechnicianController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::post('clients/import', [ClientController::class, 'import'])->name('clients.import');
+        Route::get('clients/template', [ClientController::class, 'downloadTemplate'])->name('clients.template');
+        Route::resource('clients', ClientController::class);
+        Route::resource('jobs', JobController::class);
+        Route::resource('job-templates', JobTemplateController::class);
+        Route::resource('technicians', TechnicianController::class)->only(['index', 'store', 'update', 'destroy']);
 
-    Route::post('jobs/{job}/media', [JobController::class, 'uploadMedia'])->name('jobs.uploadMedia');
-    Route::delete('jobs/{job}/media/{media}', [JobController::class, 'deleteMedia'])->name('jobs.deleteMedia');
-    Route::post('jobs/{job}/media/reorder', [JobController::class, 'reorderMedia'])->name('jobs.reorderMedia');
-    Route::post('jobs/{job}/signature', [JobController::class, 'saveSignature'])->name('jobs.saveSignature');
-    Route::get('jobs/{job}/report', [JobController::class, 'downloadReport'])->name('jobs.report');
-    Route::post('jobs/{job}/report/send', [JobController::class, 'sendReport'])->name('jobs.sendReport');
-    Route::post('jobs/{job}/generate-summary', [JobController::class, 'generateSummary'])->name('jobs.generateSummary');
-    Route::post('jobs/{job}/request-signature', [JobController::class, 'requestSignature'])->name('jobs.requestSignature');
+        Route::post('jobs/{job}/media', [JobController::class, 'uploadMedia'])->name('jobs.uploadMedia');
+        Route::delete('jobs/{job}/media/{media}', [JobController::class, 'deleteMedia'])->name('jobs.deleteMedia');
+        Route::post('jobs/{job}/media/reorder', [JobController::class, 'reorderMedia'])->name('jobs.reorderMedia');
+        Route::post('jobs/{job}/signature', [JobController::class, 'saveSignature'])->name('jobs.saveSignature');
+        Route::get('jobs/{job}/report', [JobController::class, 'downloadReport'])->name('jobs.report');
+        Route::post('jobs/{job}/report/send', [JobController::class, 'sendReport'])->name('jobs.sendReport');
+        Route::post('jobs/{job}/generate-summary', [JobController::class, 'generateSummary'])->name('jobs.generateSummary');
+        Route::post('jobs/{job}/request-signature', [JobController::class, 'requestSignature'])->name('jobs.requestSignature');
 
-    Route::get('/company/settings', [CompanyController::class, 'edit'])->name('company.edit');
-    Route::post('/company/settings', [CompanyController::class, 'update'])->name('company.update');
+        Route::get('/company/settings', [CompanyController::class, 'edit'])->name('company.edit');
+        Route::post('/company/settings', [CompanyController::class, 'update'])->name('company.update');
 
-    // Subscription Management
-    Route::get('/subscription', [CompanyController::class, 'subscription'])->name('subscription.index');
-    Route::post('/subscription', [CompanyController::class, 'subscribe'])->name('subscription.subscribe');
-    Route::get('/subscription/invoices', [CompanyController::class, 'invoices'])->name('subscription.invoices');
-    Route::get('/subscription/invoices/{invoice}', [CompanyController::class, 'downloadInvoice'])->name('subscription.invoices.download');
+        // Subscription Management
+        Route::get('/subscription', [CompanyController::class, 'subscription'])->name('subscription.index');
+        Route::post('/subscription', [CompanyController::class, 'subscribe'])->name('subscription.subscribe');
+        Route::get('/subscription/invoices', [CompanyController::class, 'invoices'])->name('subscription.invoices');
+        Route::get('/subscription/invoices/{invoice}', [CompanyController::class, 'downloadInvoice'])->name('subscription.invoices.download');
 
-    Route::inertia('/roles-guide', 'roles-guide')->name('roles-guide');
+        Route::inertia('/roles-guide', 'roles-guide')->name('roles-guide');
 
-    Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
-    Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
-    Route::get('/contact/captcha-refresh', [ContactController::class, 'refreshCaptcha'])->name('contact.captcha-refresh');
+        Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
+        Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
+        Route::get('/contact/captcha-refresh', [ContactController::class, 'refreshCaptcha'])->name('contact.captcha-refresh');
+    });
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('users', [AdminController::class, 'users'])->name('users');
         Route::get('jobs', [AdminController::class, 'jobs'])->name('jobs');
         Route::post('impersonate/{user}', [AdminController::class, 'impersonate'])->name('impersonate');
+        Route::post('users/{user}/toggle-status', [AdminController::class, 'toggleStatus'])->name('users.toggle-status');
     });
     Route::post('stop-impersonating', [AdminController::class, 'stopImpersonating'])->name('admin.stop-impersonating');
 });

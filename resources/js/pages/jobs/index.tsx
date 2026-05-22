@@ -1,4 +1,5 @@
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
+import { pickBy } from 'lodash';
 import { LucideCalendar, LucidePlus, LucideUser, LucideTrash2, LucideSearch, LucideFilter, LucideX, LucideChevronLeft, LucideChevronRight } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useDebounce } from 'react-use';
@@ -96,15 +97,16 @@ export default function Index({ jobs, filters, technicians }: Props) {
             return;
         }
 
-        router.get(
-            index(),
+        const data = pickBy(
             {
                 search: search || undefined,
                 status: status === 'all' ? undefined : status,
                 technician_id: technicianId === 'all' ? undefined : technicianId,
             },
-            { preserveState: true, replace: true },
+            (value) => value !== undefined && value !== '',
         );
+
+        router.get(index(), data, { preserveState: true, replace: true });
     }, [search, status, technicianId, filters]);
 
     useDebounce(

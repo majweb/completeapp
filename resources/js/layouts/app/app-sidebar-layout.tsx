@@ -1,4 +1,4 @@
-import { usePage, Link } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import { LogOut } from 'lucide-react';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
@@ -14,6 +14,10 @@ export default function AppSidebarLayout({
     const { auth } = usePage().props as any;
     const isImpersonating = !!auth.impersonated_by;
 
+    const handleStopImpersonating = () => {
+        router.post(stopImpersonating().url);
+    };
+
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
@@ -23,15 +27,13 @@ export default function AppSidebarLayout({
                         <div className="flex items-center gap-2">
                             <span>Jesteś zalogowany jako <strong>{auth.user.name}</strong></span>
                         </div>
-                        <Link
-                            href={stopImpersonating().url}
-                            method="post"
-                            as="button"
-                            className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1 rounded transition-colors"
+                        <button
+                            onClick={handleStopImpersonating}
+                            className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1 rounded transition-colors cursor-pointer"
                         >
                             <LogOut className="w-3 h-3" />
                             Wróć do Admina
-                        </Link>
+                        </button>
                     </div>
                 )}
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />

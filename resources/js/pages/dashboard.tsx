@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Bell, Briefcase, CheckCircle, Clock, MapPin, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, Briefcase, CheckCircle, Clock, MapPin, Users, ChevronDown, ChevronUp, Home } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Area, AreaChart, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
 
@@ -8,7 +8,7 @@ import JobMap from '@/components/job-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { dashboard } from '@/routes';
+import { dashboard, home } from '@/routes';
 
 const STATUS_LABELS: Record<string, string> = {
     new: 'Nowe',
@@ -95,6 +95,19 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
         <>
             <Head title="Dashboard" />
             <div className="flex flex-col gap-6 p-6">
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight">Witaj, {auth.user.name}</h2>
+                        <p className="text-muted-foreground text-sm">Oto co dzieje się dzisiaj w Twojej firmie.</p>
+                    </div>
+                    <Button variant="outline" size="sm" asChild className="gap-2">
+                        <Link href={home()}>
+                            <Home className="h-4 w-4" />
+                            Powrót do strony głównej
+                        </Link>
+                    </Button>
+                </div>
+
                 {hasNewJobs && (
                     <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded relative flex items-center justify-between shadow-sm animate-pulse">
                         <div className="flex items-center">

@@ -1,10 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Users, ClipboardList, FileText, HardHat, Settings, CreditCard, Info } from 'lucide-react';
+import { LayoutGrid, Users, ClipboardList, FileText, HardHat, Settings, CreditCard, Info, MessageSquare } from 'lucide-react';
 import { index as clientsIndex } from '@/actions/App/Http/Controllers/ClientController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { PwaInstallButton } from '@/components/pwa-install-button';
 import {
     Sidebar,
     SidebarContent,
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard, rolesGuide } from '@/routes';
 import { edit as companySettingsRoute } from '@/routes/company';
+import { show as contactShow } from '@/routes/contact';
 import { index as jobTemplatesIndex } from '@/routes/job-templates';
 import { index as jobsIndex } from '@/routes/jobs';
 import { index as subscriptionIndex } from '@/routes/subscription';
@@ -43,6 +45,11 @@ export function AppSidebar() {
             title: 'Przewodnik po rolach',
             href: rolesGuide(),
             icon: Info,
+        },
+        {
+            title: 'Kontakt i opinie',
+            href: contactShow(),
+            icon: MessageSquare,
         },
     ];
 
@@ -108,6 +115,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
+                <PwaInstallButton />
                 <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>

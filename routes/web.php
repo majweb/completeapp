@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\JobController;
@@ -38,6 +39,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/subscription/invoices/{invoice}', [CompanyController::class, 'downloadInvoice'])->name('subscription.invoices.download');
 
     Route::inertia('/roles-guide', 'roles-guide')->name('roles-guide');
+
+    Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
+    Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
+    Route::get('/contact/captcha-refresh', [ContactController::class, 'refreshCaptcha'])->name('contact.captcha-refresh');
 });
 
 Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook']);

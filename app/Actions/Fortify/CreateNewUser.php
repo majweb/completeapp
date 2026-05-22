@@ -4,10 +4,12 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Mail\NewUserAdminNotificationMail;
 use App\Models\User;
 use App\Models\Company;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -36,13 +38,20 @@ class CreateNewUser implements CreatesNewUsers
                 'slug' => Str::slug($input['company_name']),
             ]);
 
-            return User::create([
+            $user = User::create([
                 'name' => $input['name'],
                 'email' => $input['email'],
                 'password' => Hash::make($input['password']),
                 'company_id' => $company->id,
                 'role' => 'owner',
             ]);
+
+            $adminEmail = config('mail.from.address');
+            if ($adminEmail) {
+                Mail::to($adminEmail)->send(new NewUserAdminNotificationMail($user));
+            }
+
+            return $user;
         });
     }
 }

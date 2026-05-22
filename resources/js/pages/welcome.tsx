@@ -3,6 +3,7 @@ import {
     Briefcase,
     Camera,
     ClipboardCheck,
+    Download,
     LayoutDashboard,
     Rocket,
     ShieldCheck,
@@ -13,10 +14,13 @@ import {
 } from 'lucide-react';
 
 import AppLogoIcon from '@/components/app-logo-icon';
+import { Button } from '@/components/ui/button';
+import { usePwaInstall } from '@/hooks/use-pwa-install';
 import { dashboard, login, register } from '@/routes';
 
 export default function Welcome() {
     const { auth } = usePage().props;
+    const { isInstallable, install } = usePwaInstall();
 
     return (
         <>
@@ -86,7 +90,7 @@ export default function Welcome() {
                                     CompleteApp to nowoczesna platforma FSM do zarządzania zleceniami w terenie.
                                     Digitalizuj checklisty, zbieraj podpisy i generuj raporty oparte na AI w kilka sekund.
                                 </p>
-                                <div className="mt-12 flex items-center justify-center gap-6">
+                                <div className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row">
                                     <Link
                                         href={register()}
                                         className="rounded-full bg-[#1b1b18] px-8 py-4 text-base font-semibold text-white shadow-xl hover:bg-[#1b1b18]/90 dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white transition-transform hover:scale-105"
@@ -101,6 +105,19 @@ export default function Welcome() {
                                         <span className="group-hover:translate-x-1 transition-transform">→</span>
                                     </a>
                                 </div>
+
+                                {isInstallable && (
+                                    <div className="mt-8 flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                                        <Button
+                                            variant="outline"
+                                            onClick={install}
+                                            className="rounded-full border-[#19140015] bg-white/50 px-6 py-6 text-base font-medium backdrop-blur-sm transition-all hover:bg-white dark:border-[#3E3E3A] dark:bg-white/5 dark:hover:bg-white/10"
+                                        >
+                                            <Download className="mr-2 h-5 w-5 text-[#f53003] dark:text-[#FF4433]" />
+                                            Zainstaluj jako aplikację PWA
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

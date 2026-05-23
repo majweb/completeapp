@@ -34,7 +34,7 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <link rel="manifest" href="/manifest.json">
-        <meta name="theme-color" content="#3b82f6">
+        <meta name="theme-color" content="#FD8031">
 
         @fonts
 

@@ -24,7 +24,24 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="Zlecenio - Nowoczesne Zarządzanie Zleceniami Terenowymi" />
+            <Head>
+                <title>Zlecenio - Nowoczesne Zarządzanie Zleceniami Terenowymi</title>
+                <meta name="description" content="Zlecenio to nowoczesna platforma FSM do zarządzania zleceniami w terenie. Digitalizuj checklisty, zbieraj podpisy i generuj raporty AI." />
+
+                {/* Open Graph / Facebook */}
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content="https://zlecenio.app" />
+                <meta property="og:title" content="Zlecenio - Zarządzaj serwisem bez papierów" />
+                <meta property="og:description" content="Nowoczesna platforma dla firm serwisowych. Checklisty, zdjęcia, podpisy i raporty AI w jednej aplikacji." />
+                <meta property="og:image" content="https://zlecenio.app/og-image.png" />
+
+                {/* Twitter */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:url" content="https://zlecenio.app" />
+                <meta name="twitter:title" content="Zlecenio - Zarządzaj serwisem bez papierów" />
+                <meta name="twitter:description" content="Nowoczesna platforma dla firm serwisowych. Checklisty, zdjęcia, podpisy i raporty AI w jednej aplikacji." />
+                <meta name="twitter:image" content="https://zlecenio.app/og-image.png" />
+            </Head>
 
             <div className="flex min-h-screen flex-col bg-[#FDFDFC] text-[#1b1b18] dark:bg-[#0a0a0a] dark:text-[#EDEDEC]">
                 {/* Header/Navbar */}

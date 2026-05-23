@@ -63,13 +63,13 @@ export default function Create() {
         <>
             <Head title="Dodaj Klienta" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" asChild className="cursor-pointer">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <Button variant="outline" size="icon" asChild className="shrink-0 cursor-pointer">
                         <Link href={index.url()}>
                             <LucideArrowLeft className="h-4 w-4" />
                         </Link>
                     </Button>
-                    <h1 className="text-2xl font-bold tracking-tight">Dodaj nowego klienta</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dodaj nowego klienta</h1>
                 </div>
 
                 <div className="w-full">
@@ -190,11 +190,11 @@ export default function Create() {
                                     <InputError message={errors.notes} />
                                 </div>
 
-                                <div className="flex justify-end gap-2 pt-4">
-                                    <Button variant="outline" type="button" asChild disabled={processing} className="cursor-pointer">
+                                <div className="flex flex-col md:flex-row justify-end gap-2 pt-4">
+                                    <Button variant="outline" type="button" asChild disabled={processing} className="w-full md:w-auto cursor-pointer order-2 md:order-1">
                                         <Link href={index.url()}>Anuluj</Link>
                                     </Button>
-                                    <Button type="submit" disabled={processing} className="cursor-pointer">
+                                    <Button type="submit" disabled={processing} className="w-full md:w-auto cursor-pointer order-1 md:order-2">
                                         <LucideSave className="mr-2 h-4 w-4" />
                                         Zapisz klienta
                                     </Button>

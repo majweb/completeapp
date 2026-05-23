@@ -91,10 +91,10 @@ export default function Index({ clients }: Props) {
         <>
             <Head title="Klienci" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Klienci</h1>
                     {isOwnerOrManager && (
-                        <div className="flex items-center gap-2">
+                        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                             <input
                                 type="file"
                                 ref={fileInputRef}
@@ -106,18 +106,18 @@ export default function Index({ clients }: Props) {
                                 variant="outline"
                                 onClick={handleImportClick}
                                 disabled={importing}
-                                className="cursor-pointer"
+                                className="w-full sm:w-auto cursor-pointer"
                             >
                                 <LucideUpload className="mr-2 h-4 w-4" />
-                                {importing ? 'Importowanie...' : 'Importuj CSV'}
+                                <span className="truncate">{importing ? 'Importowanie...' : 'Importuj CSV'}</span>
                             </Button>
-                            <Button variant="outline" asChild className="cursor-pointer">
+                            <Button variant="outline" asChild className="w-full sm:w-auto cursor-pointer">
                                 <a href={downloadTemplate.url()}>
                                     <LucideDownload className="mr-2 h-4 w-4" />
-                                    Pobierz wzór
+                                    <span className="truncate">Wzór</span>
                                 </a>
                             </Button>
-                            <Button asChild className="cursor-pointer">
+                            <Button asChild className="col-span-2 w-full sm:w-auto cursor-pointer">
                                 <Link href={create.url()}>
                                     <LucidePlus className="mr-2 h-4 w-4" />
                                     Dodaj klienta

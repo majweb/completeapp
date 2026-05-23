@@ -13,8 +13,8 @@ class JobTemplateSeeder extends Seeder
     public function run(): void
     {
         $company = \App\Models\Company::firstOrCreate(
-            ['slug' => 'default-company'],
-            ['name' => 'Firma Testowa']
+            ['slug' => 'majweb'],
+            ['name' => 'Majweb']
         );
 
         $templates = [

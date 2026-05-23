@@ -842,21 +842,21 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 className={`relative group aspect-square rounded-md overflow-hidden border bg-muted shadow-sm transition-all duration-200 cursor-move ${dragOverItem === m.id ? 'scale-105 ring-2 ring-primary ring-offset-2 z-10' : ''}`}
                                             >
                                                 <img src={m.url} alt="Przed" className="h-full w-full object-cover pointer-events-none" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
-                                                    <div className="flex gap-1">
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 md:gap-2">
+                                                    <div className="flex gap-1.5 md:gap-2">
                                                         {idx > 0 && (
-                                                            <Button variant="secondary" size="icon" className="h-7 w-7 cursor-pointer shadow-md" onClick={() => moveMedia(m.id, 'up', 'images_before')}>
-                                                                <LucideArrowUp className="h-3.5 w-3.5" />
+                                                            <Button variant="secondary" size="icon" className="h-8 w-8 md:h-7 md:w-7 cursor-pointer shadow-md" onClick={() => moveMedia(m.id, 'up', 'images_before')}>
+                                                                <LucideArrowUp className="h-4 w-4 md:h-3.5 md:w-3.5" />
                                                             </Button>
                                                         )}
                                                         {idx < job.media.images_before.length - 1 && (
-                                                            <Button variant="secondary" size="icon" className="h-7 w-7 cursor-pointer shadow-md" onClick={() => moveMedia(m.id, 'down', 'images_before')}>
-                                                                <LucideArrowDown className="h-3.5 w-3.5" />
+                                                            <Button variant="secondary" size="icon" className="h-8 w-8 md:h-7 md:w-7 cursor-pointer shadow-md" onClick={() => moveMedia(m.id, 'down', 'images_before')}>
+                                                                <LucideArrowDown className="h-4 w-4 md:h-3.5 md:w-3.5" />
                                                             </Button>
                                                         )}
                                                     </div>
-                                                    <Button variant="destructive" size="icon" className="h-7 w-7 cursor-pointer shadow-md" onClick={() => setMediaToDelete(m.id)}>
-                                                        <LucideTrash2 className="h-3.5 w-3.5" />
+                                                    <Button variant="destructive" size="icon" className="h-8 w-8 md:h-7 md:w-7 cursor-pointer shadow-md" onClick={() => setMediaToDelete(m.id)}>
+                                                        <LucideTrash2 className="h-4 w-4 md:h-3.5 md:w-3.5" />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -928,21 +928,21 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 className={`relative group aspect-square rounded-md overflow-hidden border bg-muted shadow-sm transition-all duration-200 cursor-move ${dragOverItem === m.id ? 'scale-105 ring-2 ring-primary ring-offset-2 z-10' : ''}`}
                                             >
                                                 <img src={m.url} alt="Po" className="h-full w-full object-cover pointer-events-none" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
-                                                    <div className="flex gap-1">
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 md:gap-2">
+                                                    <div className="flex gap-1.5 md:gap-2">
                                                         {idx > 0 && (
-                                                            <Button variant="secondary" size="icon" className="h-7 w-7 cursor-pointer shadow-md" onClick={() => moveMedia(m.id, 'up', 'images_after')}>
-                                                                <LucideArrowUp className="h-3.5 w-3.5" />
+                                                            <Button variant="secondary" size="icon" className="h-8 w-8 md:h-7 md:w-7 cursor-pointer shadow-md" onClick={() => moveMedia(m.id, 'up', 'images_after')}>
+                                                                <LucideArrowUp className="h-4 w-4 md:h-3.5 md:w-3.5" />
                                                             </Button>
                                                         )}
                                                         {idx < job.media.images_after.length - 1 && (
-                                                            <Button variant="secondary" size="icon" className="h-7 w-7 cursor-pointer shadow-md" onClick={() => moveMedia(m.id, 'down', 'images_after')}>
-                                                                <LucideArrowDown className="h-3.5 w-3.5" />
+                                                            <Button variant="secondary" size="icon" className="h-8 w-8 md:h-7 md:w-7 cursor-pointer shadow-md" onClick={() => moveMedia(m.id, 'down', 'images_after')}>
+                                                                <LucideArrowDown className="h-4 w-4 md:h-3.5 md:w-3.5" />
                                                             </Button>
                                                         )}
                                                     </div>
-                                                    <Button variant="destructive" size="icon" className="h-7 w-7 cursor-pointer shadow-md" onClick={() => setMediaToDelete(m.id)}>
-                                                        <LucideTrash2 className="h-3.5 w-3.5" />
+                                                    <Button variant="destructive" size="icon" className="h-8 w-8 md:h-7 md:w-7 cursor-pointer shadow-md" onClick={() => setMediaToDelete(m.id)}>
+                                                        <LucideTrash2 className="h-4 w-4 md:h-3.5 md:w-3.5" />
                                                     </Button>
                                                 </div>
                                             </div>

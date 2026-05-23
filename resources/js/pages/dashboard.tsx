@@ -94,13 +94,13 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
     return (
         <>
             <Head title="Dashboard" />
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-6 p-4 sm:p-6">
                 <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight">Witaj, {auth.user.name}</h2>
-                        <p className="text-muted-foreground text-sm">Oto co dzieje się dzisiaj w Twojej firmie.</p>
+                    <div className="w-full sm:w-auto">
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Witaj, {auth.user.name}</h2>
+                        <p className="text-muted-foreground text-xs sm:text-sm">Oto co dzieje się dzisiaj w Twojej firmie.</p>
                     </div>
-                    <Button variant="outline" size="sm" asChild className="gap-2">
+                    <Button variant="outline" size="sm" asChild className="gap-2 w-full sm:w-auto">
                         <Link href={home()}>
                             <Home className="h-4 w-4" />
                             Powrót do strony głównej
@@ -122,7 +122,7 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
                         </button>
                     </div>
                 )}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                     <StatCard title="Wszystkie Zlecenia" value={stats.total_jobs} icon={<Briefcase />} />
                     <StatCard title="Aktywne Zlecenia" value={stats.active_jobs} icon={<Clock />} />
                     <StatCard title="Ukończone Dzisiaj" value={stats.completed_today} icon={<CheckCircle />} />
@@ -168,7 +168,7 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
                                 <CardTitle className="text-blue-900">Twoje najbliższe zadania</CardTitle>
                                 <CardDescription>Szybki dostęp do przypisanych zleceń</CardDescription>
                             </CardHeader>
-                            <CardContent className="grid gap-4 md:grid-cols-3">
+                            <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
                                 {next_jobs.map((job) => (
                                     <div key={job.id} className="bg-white p-4 rounded-lg border shadow-sm flex flex-col justify-between">
                                         <div>

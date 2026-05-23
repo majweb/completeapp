@@ -77,6 +77,8 @@ export default function Index({ jobs, filters, technicians }: Props) {
     const [status, setStatus] = useState(filters.status || 'all');
     const [technicianId, setTechnicianId] = useState(filters.technician_id || 'all');
 
+    const [showFilters, setShowFilters] = useState(false);
+
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSearch(filters.search || '');
@@ -149,110 +151,133 @@ export default function Index({ jobs, filters, technicians }: Props) {
                     )}
                 </div>
 
-                <div className="flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-sm md:flex-row md:items-center">
-                    <div className="relative flex-1">
-                        <LucideSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            placeholder="Szukaj..."
-                            className="pl-9"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                        {search && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 cursor-pointer"
-                                onClick={() => setSearch('')}
-                            >
-                                <LucideX className="h-4 w-4" />
-                            </Button>
-                        )}
+                <div className="flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-sm">
+                    <div className="flex items-center justify-between md:hidden">
+                        <div className="relative flex-1 mr-2">
+                            <LucideSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                placeholder="Szukaj..."
+                                className="pl-9 h-9"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 cursor-pointer"
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            <LucideFilter className="mr-2 h-4 w-4" />
+                            {showFilters ? 'Ukryj' : 'Filtry'}
+                        </Button>
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <div className="flex flex-1 gap-2">
-                            <div className="w-full sm:w-[160px]">
-                                <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="w-full">
-                                        <LucideFilter className="mr-2 h-4 w-4 text-muted-foreground" />
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Wszystkie statusy</SelectItem>
-                                        {Object.entries(statusLabels).map(([val, label]) => (
-                                            <SelectItem key={val} value={val}>
-                                                {label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                    <div className={`${showFilters ? 'flex' : 'hidden'} flex-col gap-4 md:flex md:flex-row md:items-center`}>
+                        <div className="relative flex-1 hidden md:block">
+                            <LucideSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                placeholder="Szukaj..."
+                                className="pl-9"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                            {search && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 cursor-pointer"
+                                    onClick={() => setSearch('')}
+                                >
+                                    <LucideX className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
 
-                            {!isTechnician && technicians.length > 0 && (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <div className="flex flex-col flex-1 gap-2 sm:flex-row">
                                 <div className="w-full sm:w-[160px]">
-                                    <Select value={technicianId} onValueChange={setTechnicianId}>
+                                    <Select value={status} onValueChange={setStatus}>
                                         <SelectTrigger className="w-full">
-                                            <LucideUser className="mr-2 h-4 w-4 text-muted-foreground" />
-                                            <SelectValue placeholder="Technik" />
+                                            <LucideFilter className="mr-2 h-4 w-4 text-muted-foreground" />
+                                            <SelectValue placeholder="Status" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="all">Wszyscy</SelectItem>
-                                            {technicians.map((t) => (
-                                                <SelectItem key={t.id} value={t.id.toString()}>
-                                                    {t.name}
+                                            <SelectItem value="all">Wszystkie statusy</SelectItem>
+                                            {Object.entries(statusLabels).map(([val, label]) => (
+                                                <SelectItem key={val} value={val}>
+                                                    {label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                            )}
-                        </div>
 
-                        <div className="flex items-center justify-between gap-2 border-t pt-2 sm:border-l sm:border-t-0 sm:pl-2 sm:pt-0">
-                            {(search || status !== 'all' || technicianId !== 'all') && (
-                                <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 cursor-pointer">
-                                    Wyczyść
-                                </Button>
-                            )}
-
-                            {jobs.last_page > 1 && (
-                                <div className="ml-auto flex items-center gap-1">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        asChild={!!jobs.links[0].url}
-                                        disabled={!jobs.links[0].url}
-                                    >
-                                        {jobs.links[0].url ? (
-                                            <Link href={jobs.links[0].url as string}>
-                                                <LucideChevronLeft className="h-4 w-4" />
-                                            </Link>
-                                        ) : (
-                                            <LucideChevronLeft className="h-4 w-4" />
-                                        )}
-                                    </Button>
-                                    <div className="text-[10px] font-medium px-1 whitespace-nowrap">
-                                        {jobs.current_page} / {jobs.last_page}
+                                {!isTechnician && technicians.length > 0 && (
+                                    <div className="w-full sm:w-[160px]">
+                                        <Select value={technicianId} onValueChange={setTechnicianId}>
+                                            <SelectTrigger className="w-full">
+                                                <LucideUser className="mr-2 h-4 w-4 text-muted-foreground" />
+                                                <SelectValue placeholder="Technik" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Wszyscy</SelectItem>
+                                                {technicians.map((t) => (
+                                                    <SelectItem key={t.id} value={t.id.toString()}>
+                                                        {t.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        asChild={!!jobs.links[jobs.links.length - 1].url}
-                                        disabled={!jobs.links[jobs.links.length - 1].url}
-                                    >
-                                        {jobs.links[jobs.links.length - 1].url ? (
-                                            <Link href={jobs.links[jobs.links.length - 1].url as string}>
-                                                <LucideChevronRight className="h-4 w-4" />
-                                            </Link>
-                                        ) : (
-                                            <LucideChevronRight className="h-4 w-4" />
-                                        )}
+                                )}
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2 border-t pt-2 sm:border-l sm:border-t-0 sm:pl-2 sm:pt-0">
+                                {(search || status !== 'all' || technicianId !== 'all') && (
+                                    <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 cursor-pointer w-full sm:w-auto">
+                                        Wyczyść
                                     </Button>
-                                </div>
-                            )}
+                                )}
+
+                                {jobs.last_page > 1 && (
+                                    <div className="ml-auto flex items-center gap-1">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            asChild={!!jobs.links[0].url}
+                                            disabled={!jobs.links[0].url}
+                                        >
+                                            {jobs.links[0].url ? (
+                                                <Link href={jobs.links[0].url as string}>
+                                                    <LucideChevronLeft className="h-4 w-4" />
+                                                </Link>
+                                            ) : (
+                                                <LucideChevronLeft className="h-4 w-4" />
+                                            )}
+                                        </Button>
+                                        <div className="text-[10px] font-medium px-1 whitespace-nowrap">
+                                            {jobs.current_page} / {jobs.last_page}
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            asChild={!!jobs.links[jobs.links.length - 1].url}
+                                            disabled={!jobs.links[jobs.links.length - 1].url}
+                                        >
+                                            {jobs.links[jobs.links.length - 1].url ? (
+                                                <Link href={jobs.links[jobs.links.length - 1].url as string}>
+                                                    <LucideChevronRight className="h-4 w-4" />
+                                                </Link>
+                                            ) : (
+                                                <LucideChevronRight className="h-4 w-4" />
+                                            )}
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

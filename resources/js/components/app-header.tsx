@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import { useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -68,6 +69,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
     const { auth } = page.props;
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
+    const [open, setOpen] = useState(false);
 
     return (
         <>
@@ -75,7 +77,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
-                        <Sheet>
+                        <Sheet open={open} onOpenChange={setOpen}>
                             <SheetTrigger asChild>
                                 <Button
                                     variant="ghost"
@@ -103,6 +105,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                     key={item.title}
                                                     href={item.href}
                                                     className="flex items-center space-x-2 font-medium"
+                                                    onClick={() => setOpen(false)}
                                                 >
                                                     {item.icon && (
                                                         <item.icon className="h-5 w-5" />
@@ -120,6 +123,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="flex items-center space-x-2 font-medium"
+                                                    onClick={() => setOpen(false)}
                                                 >
                                                     {item.icon && (
                                                         <item.icon className="h-5 w-5" />

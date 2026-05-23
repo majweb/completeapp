@@ -860,9 +860,16 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             >
                                                 <div
                                                     onClick={() => setPreviewImage(m.original_url)}
-                                                    className={`relative aspect-square rounded-t-md overflow-hidden border bg-muted shadow-sm cursor-pointer ${dragOverItem === m.id ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+                                                    className={`relative aspect-square rounded-t-md overflow-hidden border bg-muted shadow-sm cursor-pointer group/photo ${dragOverItem === m.id ? 'ring-2 ring-primary ring-offset-1' : ''}`}
                                                 >
                                                     <img src={m.url} alt="Przed" className="h-full w-full object-cover pointer-events-none" />
+
+                                                    {/* Hover Overlay */}
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <div className="bg-white/20 backdrop-blur-sm p-2 rounded-full border border-white/30">
+                                                            <LucideSearch className="h-6 w-6 text-white" />
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex items-center justify-between p-1 bg-background border border-t-0 rounded-b-md shadow-sm">
@@ -991,9 +998,16 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             >
                                                 <div
                                                     onClick={() => setPreviewImage(m.original_url)}
-                                                    className={`relative aspect-square rounded-t-md overflow-hidden border bg-muted shadow-sm cursor-pointer ${dragOverItem === m.id ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+                                                    className={`relative aspect-square rounded-t-md overflow-hidden border bg-muted shadow-sm cursor-pointer group/photo ${dragOverItem === m.id ? 'ring-2 ring-primary ring-offset-1' : ''}`}
                                                 >
                                                     <img src={m.url} alt="Po" className="h-full w-full object-cover pointer-events-none" />
+
+                                                    {/* Hover Overlay */}
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <div className="bg-white/20 backdrop-blur-sm p-2 rounded-full border border-white/30">
+                                                            <LucideSearch className="h-6 w-6 text-white" />
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex items-center justify-between p-1 bg-background border border-t-0 rounded-b-md shadow-sm">

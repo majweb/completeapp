@@ -1,4 +1,5 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
+import imageCompression from 'browser-image-compression';
 import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock, LucideExternalLink } from 'lucide-react';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
@@ -259,7 +260,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
         }
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent, collection: string) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent, collection: string) => {
         let file: File | undefined;
 
         if ('files' in e.target && e.target.files) {
@@ -269,36 +270,63 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
         }
 
         if (file) {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('collection', collection);
+            setUploadingCollection(collection);
 
-            router.post(uploadMedia(job.id).url, formData, {
-                forceFormData: true,
-                preserveScroll: true,
-                onStart: () => {
-                    setUploadingCollection(collection);
-                },
-                onSuccess: () => {
-                    // Inertia automatycznie przeładuje propsy, co odświeży listę zdjęć
-                    // Czyścimy błędy mediów po sukcesie uploadu
+            try {
+                // Konfiguracja kompresji
+                const options = {
+                    maxSizeMB: 2, // Maksymalny rozmiar pliku
+                    maxWidthOrHeight: 2048, // Maksymalna szerokość/wysokość
+                    useWebWorker: true,
+                };
 
-                    if (collection === 'images_before') {
-                        delete (errors as any)['media.images_before'];
+                // Jeśli to obrazek, kompresujemy go
+                let fileToUpload = file;
+
+                if (file.type.startsWith('image/') && file.type !== 'image/gif') {
+                    try {
+                        fileToUpload = await imageCompression(file, options);
+                        // Zachowaj oryginalną nazwę pliku
+                        fileToUpload = new File([fileToUpload], file.name, {
+                            type: fileToUpload.type,
+                            lastModified: Date.now(),
+                        });
+                    } catch (compressionError) {
+                        console.error('Compression error:', compressionError);
+                        // W razie błędu kompresji wysyłamy oryginał
                     }
-
-                    if (collection === 'images_after') {
-                        delete (errors as any)['media.images_after'];
-                    }
-                },
-                onError: (errors) => {
-                    console.error('Upload error:', errors);
-                    alert('Błąd podczas przesyłania zdjęcia.');
-                },
-                onFinish: () => {
-                    setUploadingCollection(null);
                 }
-            });
+
+                const formData = new FormData();
+                formData.append('image', fileToUpload);
+                formData.append('collection', collection);
+
+                router.post(uploadMedia(job.id).url, formData, {
+                    forceFormData: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        // Inertia automatycznie przeładuje propsy, co odświeży listę zdjęć
+                        if (collection === 'images_before') {
+                            delete (errors as any)['media.images_before'];
+                        }
+
+                        if (collection === 'images_after') {
+                            delete (errors as any)['media.images_after'];
+                        }
+                    },
+                    onError: (errors) => {
+                        console.error('Upload error:', errors);
+                        alert('Błąd podczas przesyłania zdjęcia.');
+                    },
+                    onFinish: () => {
+                        setUploadingCollection(null);
+                    }
+                });
+            } catch (error) {
+                console.error('Error in handleFileUpload:', error);
+                setUploadingCollection(null);
+                alert('Wystąpił nieoczekiwany błąd.');
+            }
 
             if ('value' in e.target) {
                 (e.target as HTMLInputElement).value = '';

@@ -155,7 +155,7 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
                         </CardHeader>
                         {isMapVisible && (
                             <CardContent>
-                                <JobMap jobs={map_jobs} height="450px" zoom={11} />
+                                <JobMap jobs={map_jobs} height="300px" zoom={11} />
                             </CardContent>
                         )}
                     </Card>

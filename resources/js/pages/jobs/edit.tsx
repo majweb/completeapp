@@ -283,7 +283,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                             <Label>Lokalizacja</Label>
                                             <JobMap
                                                 jobs={clientMapData}
-                                                height="250px"
+                                                height="200px"
                                                 center={[selectedClient.latitude, selectedClient.longitude]}
                                                 zoom={15}
                                             />

@@ -48,15 +48,14 @@ export default function ManageTwoFactor(props: Props) {
         <div className="space-y-6">
             <Heading
                 variant="small"
-                title="Two-factor authentication"
-                description="Manage your two-factor authentication settings"
+                title="Uwierzytelnianie dwuskładnikowe"
+                description="Zarządzaj ustawieniami uwierzytelniania dwuskładnikowego"
             />
             {twoFactorEnabled ? (
                 <div className="flex flex-col items-start justify-start space-y-4">
                     <p className="text-sm text-muted-foreground">
-                        You will be prompted for a secure, random pin during
-                        login, which you can retrieve from the TOTP-supported
-                        application on your phone.
+                        Podczas logowania zostaniesz poproszony o bezpieczny, losowy kod PIN,
+                        który możesz pobrać z aplikacji obsługującej TOTP na swoim telefonie.
                     </p>
 
                     <div className="relative inline">
@@ -67,7 +66,7 @@ export default function ManageTwoFactor(props: Props) {
                                     type="submit"
                                     disabled={processing}
                                 >
-                                    Disable 2FA
+                                    Wyłącz 2FA
                                 </Button>
                             )}
                         </Form>
@@ -82,17 +81,16 @@ export default function ManageTwoFactor(props: Props) {
             ) : (
                 <div className="flex flex-col items-start justify-start space-y-4">
                     <p className="text-sm text-muted-foreground">
-                        When you enable two-factor authentication, you will be
-                        prompted for a secure pin during login. This pin can be
-                        retrieved from a TOTP-supported application on your
-                        phone.
+                        Po włączeniu uwierzytelniania dwuskładnikowego będziesz
+                        proszony o podanie bezpiecznego kodu PIN podczas logowania. Kod ten można
+                        pobrać z aplikacji obsługującej TOTP na swoim telefonie.
                     </p>
 
                     <div>
                         {hasSetupData ? (
                             <Button onClick={() => setShowSetupModal(true)}>
                                 <ShieldCheck />
-                                Continue setup
+                                Kontynuuj konfigurację
                             </Button>
                         ) : (
                             <Form
@@ -101,7 +99,7 @@ export default function ManageTwoFactor(props: Props) {
                             >
                                 {({ processing }) => (
                                     <Button type="submit" disabled={processing}>
-                                        Enable 2FA
+                                        Włącz 2FA
                                     </Button>
                                 )}
                             </Form>

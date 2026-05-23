@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "majsterplus/zlecenio",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "System do zarządzania zleceniami serwisowymi w terenie.",
     "keywords": [
         "laravel",
         "framework"

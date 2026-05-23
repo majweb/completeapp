@@ -24,7 +24,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="CompleteApp - Nowoczesne Zarządzanie Zleceniami Terenowymi" />
+            <Head title="Zlecenio - Nowoczesne Zarządzanie Zleceniami Terenowymi" />
 
             <div className="flex min-h-screen flex-col bg-[#FDFDFC] text-[#1b1b18] dark:bg-[#0a0a0a] dark:text-[#EDEDEC]">
                 {/* Header/Navbar */}
@@ -32,13 +32,19 @@ export default function Welcome() {
                     <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
                         <div className="flex items-center gap-2">
                             <AppLogoIcon className="h-8 w-8 fill-current text-[#f53003] dark:text-[#FF4433]" />
-                            <span className="text-xl font-bold tracking-tight">CompleteApp</span>
+                            <span className="text-xl font-bold tracking-tight">Zlecenio</span>
                         </div>
                         <nav className="flex items-center gap-4 lg:gap-8 text-sm font-medium">
                             <a href="#features" onClick={(e) => {
                                 e.preventDefault();
                                 document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
                             }} className="hidden hover:text-[#f53003] md:block dark:hover:text-[#FF4433]">Funkcje</a>
+
+                            <a href="#how-it-works" onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+                            }} className="hidden hover:text-[#f53003] md:block dark:hover:text-[#FF4433]">Jak to działa</a>
+
                             <a href="#use-cases" onClick={(e) => {
                                 e.preventDefault();
                                 document.getElementById('use-cases')?.scrollIntoView({ behavior: 'smooth' });
@@ -87,7 +93,7 @@ export default function Welcome() {
                                     </span>
                                 </h1>
                                 <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-[#706f6c] dark:text-[#A1A09A]">
-                                    CompleteApp to nowoczesna platforma FSM do zarządzania zleceniami w terenie.
+                                    Zlecenio to nowoczesna platforma FSM do zarządzania zleceniami w terenie.
                                     Digitalizuj checklisty, zbieraj podpisy i generuj raporty oparte na AI w kilka sekund.
                                 </p>
                                 <div className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row">
@@ -185,64 +191,126 @@ export default function Welcome() {
                         </div>
                     </section>
 
-                    {/* Use Cases Section */}
-                    <section id="use-cases" className="py-24 scroll-mt-24">
+                    {/* Jak to działa - KROKI */}
+                    <section id="how-it-works" className="py-24 bg-white dark:bg-[#0a0a0a] scroll-mt-24">
                         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                            <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
+                            <div className="text-center mb-16">
+                                <h2 className="text-base font-semibold text-[#f53003] dark:text-[#FF4433]">Prosty proces</h2>
+                                <p className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Jak działa Zlecenio?</p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+                                {[
+                                    {
+                                        step: '01',
+                                        title: 'Dodajesz zlecenie',
+                                        desc: 'Wpisujesz dane klienta i przypisujesz technika w kilka sekund przez panel lub telefon.',
+                                        icon: Briefcase
+                                    },
+                                    {
+                                        step: '02',
+                                        title: 'Praca w terenie',
+                                        desc: 'Technik wypełnia cyfrową checklistę, robi zdjęcia i zbiera podpis klienta na ekranie.',
+                                        icon: ClipboardCheck
+                                    },
+                                    {
+                                        step: '03',
+                                        title: 'Raport AI w sekundę',
+                                        desc: 'System automatycznie generuje profesjonalny protokół i wysyła go do klienta.',
+                                        icon: Sparkles
+                                    }
+                                ].map((item, idx) => (
+                                    <div key={idx} className="relative p-8 rounded-3xl border border-[#19140010] dark:border-[#3E3E3A] bg-[#FDFDFC] dark:bg-[#161615]">
+                                        <div className="text-5xl font-black text-[#f53003]/10 dark:text-[#FF4433]/10 absolute top-4 right-8">
+                                            {item.step}
+                                        </div>
+                                        <div className="h-12 w-12 rounded-xl bg-[#f53003] flex items-center justify-center text-white mb-6">
+                                            <item.icon className="h-6 w-6" />
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                                        <p className="text-[#706f6c] dark:text-[#A1A09A] leading-relaxed">
+                                            {item.desc}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Branże - 3 PRZYPADKI */}
+                    <section id="use-cases" className="py-24 bg-[#F8F8F8] dark:bg-[#121212]/50 scroll-mt-24">
+                        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                            <div className="grid grid-cols-1 gap-16 lg:grid-cols-2 items-center">
                                 <div>
-                                    <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Dla kogo jest CompleteApp?</h2>
+                                    <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Komu pomoże nasza aplikacja?</h2>
                                     <p className="mt-4 text-lg text-[#706f6c] dark:text-[#A1A09A]">
-                                        Nasza elastyczność pozwala na wdrożenie systemu w niemal każdej branży serwisowej i instalacyjnej.
+                                        Skupiamy się na branżach, gdzie liczy się czas, dokumentacja fotograficzna i profesjonalizm przed klientem.
                                     </p>
-                                    <div className="mt-10 space-y-6 text-[#1b1b18] dark:text-[#EDEDEC]">
+                                    <div className="mt-10 space-y-8">
                                         {[
-                                            { title: 'Serwisy HVAC i Wentylacji', text: 'Regularne przeglądy okresowe z pełną historią.' },
-                                            { title: 'Firmy Facility Management', text: 'Koordynacja sprzątania i utrzymania budynków.' },
-                                            { title: 'Naprawa Maszyn i Winda', text: 'Wsparcie specjalistycznej dokumentacji technicznej.' },
-                                            { title: 'Telekomunikacja i Instalatorzy', text: 'Szybkie protokoły montażu u klienta.' },
+                                            {
+                                                title: 'Serwis Klimatyzacji i HVAC',
+                                                text: 'Zapomnij o papierowych protokołach. AI podsumuje stan filtrów i zasugeruje termin kolejnego przeglądu.',
+                                                tags: ['Checklisty F-Gaz', 'Zdjęcia urządzeń']
+                                            },
+                                            {
+                                                title: 'Firmy Sprzątające i Facility',
+                                                text: 'Weryfikuj jakość pracy dzięki dokumentacji foto "przed i po" z dokładnym znacznikiem czasu i GPS.',
+                                                tags: ['Dowód wykonania', 'Zespoły mobilne']
+                                            },
+                                            {
+                                                title: 'Instalatorzy Fotowoltaiki i OZE',
+                                                text: 'Błyskawicznie zamykaj protokoły odbioru z podpisem klienta, gotowe do wysłania do ubezpieczalni czy banku.',
+                                                tags: ['Podpisy cyfrowe', 'Szybkie raporty']
+                                            },
                                         ].map((item, idx) => (
-                                            <div key={idx} className="flex gap-4 p-4 rounded-xl border border-transparent hover:border-[#19140015] dark:hover:border-[#3E3E3A] hover:bg-white dark:hover:bg-white/5 transition-all">
-                                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f53003] dark:bg-[#FF4433] text-white text-[10px] font-bold">
-                                                    {idx + 1}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold">{item.title}</p>
-                                                    <p className="text-[#706f6c] dark:text-[#A1A09A]">{item.text}</p>
+                                            <div key={idx} className="group transition-all">
+                                                <div className="flex gap-4 items-start">
+                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f53003] text-white text-sm font-bold">
+                                                        {idx + 1}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-xl">{item.title}</p>
+                                                        <p className="mt-1 text-[#706f6c] dark:text-[#A1A09A] leading-relaxed">{item.text}</p>
+                                                        <div className="mt-3 flex gap-2">
+                                                            {item.tags.map(tag => (
+                                                                <span key={tag} className="text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded bg-black/5 dark:bg-white/5 text-[#f53003] dark:text-[#FF4433]">
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-4 pt-12">
-                                        <div className="h-64 rounded-2xl bg-gradient-to-br from-[#f53003]/20 to-transparent p-1 flex items-end">
-                                            <div className="bg-white dark:bg-[#161615] w-full rounded-xl p-6 shadow-sm border border-[#19140010] dark:border-[#3E3E3A]">
+
+                                {/* Dekoracyjne karty z boku */}
+                                <div className="relative">
+                                    <div className="bg-gradient-to-tr from-[#f53003] to-[#ffb900] absolute -inset-4 blur-2xl opacity-10 rounded-[3rem]"></div>
+                                    <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <div className="space-y-4 pt-8">
+                                            <div className="p-6 rounded-2xl bg-white dark:bg-[#161615] shadow-xl border border-[#19140010] dark:border-[#3E3E3A]">
                                                 <Users className="h-8 w-8 mb-4 text-[#f53003]" />
-                                                <p className="font-bold">Multi-technicy</p>
-                                                <p className="text-xs text-[#706f6c]">Zarządzaj zespołami.</p>
+                                                <p className="font-bold">Dla Zespołów</p>
+                                                <p className="text-xs text-[#706f6c]">Koordynuj wielu techników naraz.</p>
+                                            </div>
+                                            <div className="p-6 rounded-2xl bg-[#1b1b18] text-white shadow-xl">
+                                                <Zap className="h-8 w-8 mb-4 text-[#FFB800]" />
+                                                <p className="font-bold">Automatyka</p>
+                                                <p className="text-xs text-gray-400">AI oszczędza 4h pracy tygodniowo.</p>
                                             </div>
                                         </div>
-                                        <div className="h-48 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent p-1">
-                                            <div className="bg-white dark:bg-[#161615] h-full w-full rounded-xl p-6 shadow-sm border border-[#19140010] dark:border-[#3E3E3A]">
-                                                <Rocket className="h-8 w-8 mb-4 text-blue-500" />
-                                                <p className="font-bold text-sm tracking-tight">Szybka ścieżka</p>
-                                                <div className="mt-2 h-2 w-full bg-blue-100 rounded-full overflow-hidden"><div className="w-[80%] h-full bg-blue-500"></div></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div className="h-48 rounded-2xl bg-gradient-to-br from-orange-400/10 to-transparent p-1">
-                                            <div className="bg-white dark:bg-[#161615] h-full w-full rounded-xl p-6 shadow-sm border border-[#19140010] dark:border-[#3E3E3A]">
-                                                <Zap className="h-8 w-8 mb-4 text-orange-400" />
-                                                <p className="font-bold text-sm tracking-tight">Automatyka AI</p>
-                                                <p className="text-xs text-[#706f6c] italic line-clamp-2">"Wymieniono filtry, system gotowy..."</p>
-                                            </div>
-                                        </div>
-                                        <div className="h-64 rounded-2xl bg-gradient-to-br from-green-500/10 to-transparent p-1">
-                                            <div className="bg-white dark:bg-[#161615] h-full w-full rounded-xl p-6 shadow-sm border border-[#19140010] dark:border-[#3E3E3A]">
+                                        <div className="space-y-4">
+                                            <div className="p-6 rounded-2xl bg-white dark:bg-[#161615] shadow-xl border border-[#19140010] dark:border-[#3E3E3A]">
                                                 <ShieldCheck className="h-8 w-8 mb-4 text-green-500" />
-                                                <p className="font-bold text-sm">Certyfikowane Raporty</p>
-                                                <p className="text-xs text-[#706f6c]">Gwarancja rzetelności.</p>
+                                                <p className="font-bold text-sm">Legalność</p>
+                                                <p className="text-xs text-[#706f6c]">Certyfikowane podpisy i logi.</p>
+                                            </div>
+                                            <div className="p-6 rounded-2xl bg-white dark:bg-[#161615] shadow-xl border border-[#19140010] dark:border-[#3E3E3A]">
+                                                <Rocket className="h-8 w-8 mb-4 text-blue-500" />
+                                                <p className="font-bold text-sm">Wdrożenie</p>
+                                                <p className="text-xs text-[#706f6c]">Gotowy do pracy w 15 minut.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -256,7 +324,7 @@ export default function Welcome() {
                         <div className="mx-auto max-w-4xl px-6 lg:px-8 text-center">
                             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Gotowy na wejście w XXI wiek?</h2>
                             <p className="mt-6 text-lg leading-8 text-[#706f6c] dark:text-[#A1A09A]">
-                                Przetestuj CompleteApp całkowicie za darmo przez pierwsze 14 dni. <br className="hidden md:inline" />
+                                Przetestuj Zlecenio całkowicie za darmo przez pierwsze 14 dni. <br className="hidden md:inline" />
                                 Bez zobowiązań, bez karty kredytowej na start.
                             </p>
                             <div className="mt-10 flex items-center justify-center gap-6">
@@ -282,10 +350,10 @@ export default function Welcome() {
                     <div className="mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex items-center gap-2 opacity-50">
                             <AppLogoIcon className="h-5 w-5 fill-current" />
-                            <span className="text-sm font-bold tracking-tight">CompleteApp</span>
+                            <span className="text-sm font-bold tracking-tight">Zlecenio</span>
                         </div>
                         <p className="text-xs text-[#706f6c] dark:text-[#A1A09A]">
-                            © 2026 CompleteApp. System klasy FSM napędzany przez AI. Wszystkie prawa zastrzeżone.
+                            © 2026 Zlecenio. System klasy FSM napędzany przez AI. Wszystkie prawa zastrzeżone.
                         </p>
                         <div className="flex gap-6">
                             <a href="https://laravel.com/docs" target="_blank" className="text-xs hover:text-[#f53003] transition-colors dark:hover:text-[#FF4433]">Dokumentacja</a>

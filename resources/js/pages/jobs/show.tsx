@@ -843,7 +843,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                         </div>
                                     )}
                                     <div
-                                        className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-2 p-2 rounded-lg border-2 border-dashed transition-colors ${ (errors as any)['media.images_before'] ? 'border-destructive bg-destructive/5' : dragOver === 'images_before' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
+                                        className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-3 p-2 rounded-lg border-2 border-dashed transition-colors ${ (errors as any)['media.images_before'] ? 'border-destructive bg-destructive/5' : dragOver === 'images_before' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
                                         onDragOver={(e) => job.started_at && onDragOver(e, 'images_before')}
                                         onDragLeave={onDragLeave}
                                         onDrop={(e) => job.started_at && onDrop(e, 'images_before')}
@@ -856,42 +856,34 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 onDragEnd={onMediaDragEnd}
                                                 onDragOver={(e) => onMediaDragOver(e, m.id, 'images_before')}
                                                 onDrop={(e) => onMediaDrop(e, m.id, 'images_before')}
-                                                onClick={() => setPreviewImage(m.original_url)}
-                                                className={`relative group aspect-square rounded-md overflow-hidden border bg-muted shadow-sm transition-all duration-200 cursor-pointer ${dragOverItem === m.id ? 'scale-105 ring-2 ring-primary ring-offset-2 z-10' : ''}`}
+                                                className={`flex flex-col gap-1 transition-all duration-200 ${dragOverItem === m.id ? 'scale-105 z-10' : ''}`}
                                             >
-                                                <img src={m.url} alt="Przed" className="h-full w-full object-cover pointer-events-none" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                                                    <div className="flex justify-between w-full">
+                                                <div
+                                                    onClick={() => setPreviewImage(m.original_url)}
+                                                    className={`relative aspect-square rounded-t-md overflow-hidden border bg-muted shadow-sm cursor-pointer ${dragOverItem === m.id ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+                                                >
+                                                    <img src={m.url} alt="Przed" className="h-full w-full object-cover pointer-events-none" />
+                                                </div>
+
+                                                <div className="flex items-center justify-between p-1 bg-background border border-t-0 rounded-b-md shadow-sm">
+                                                    <div className="flex gap-1">
                                                         <Button
-                                                            variant="secondary"
+                                                            variant="ghost"
                                                             size="icon"
-                                                            className="h-9 w-9 cursor-pointer shadow-lg border-2 border-white/20 bg-white/90"
+                                                            className="h-8 w-8 text-muted-foreground cursor-pointer"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setPreviewImage(m.original_url);
                                                             }}
                                                         >
-                                                            <LucideSearch className="h-5 w-5" />
+                                                            <LucideSearch className="h-4 w-4" />
                                                         </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            className="h-9 w-9 cursor-pointer shadow-lg border-2 border-white/20"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setMediaToDelete(m.id);
-                                                            }}
-                                                        >
-                                                            <LucideTrash2 className="h-5 w-5" />
-                                                        </Button>
-                                                    </div>
 
-                                                    <div className="flex gap-2 w-full justify-center">
                                                         {idx > 0 && (
                                                             <Button
-                                                                variant="secondary"
+                                                                variant="ghost"
                                                                 size="icon"
-                                                                className="h-9 w-9 cursor-pointer shadow-lg border-2 border-white/20 bg-white/90"
+                                                                className="h-8 w-8 cursor-pointer"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     moveMedia(m.id, 'up', 'images_before');
@@ -902,9 +894,9 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                         )}
                                                         {idx < job.media.images_before.length - 1 && (
                                                             <Button
-                                                                variant="secondary"
+                                                                variant="ghost"
                                                                 size="icon"
-                                                                className="h-9 w-9 cursor-pointer shadow-lg border-2 border-white/20 bg-white/90"
+                                                                className="h-8 w-8 cursor-pointer"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     moveMedia(m.id, 'down', 'images_before');
@@ -914,6 +906,18 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                             </Button>
                                                         )}
                                                     </div>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setMediaToDelete(m.id);
+                                                        }}
+                                                    >
+                                                        <LucideTrash2 className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
                                             </div>
                                         ))}
@@ -970,7 +974,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                         </div>
                                     )}
                                     <div
-                                        className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-2 p-2 rounded-lg border-2 border-dashed transition-colors ${ (errors as any)['media.images_after'] ? 'border-destructive bg-destructive/5' : dragOver === 'images_after' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
+                                        className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-3 p-2 rounded-lg border-2 border-dashed transition-colors ${ (errors as any)['media.images_after'] ? 'border-destructive bg-destructive/5' : dragOver === 'images_after' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
                                         onDragOver={(e) => job.started_at && onDragOver(e, 'images_after')}
                                         onDragLeave={onDragLeave}
                                         onDrop={(e) => job.started_at && onDrop(e, 'images_after')}
@@ -983,42 +987,34 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 onDragEnd={onMediaDragEnd}
                                                 onDragOver={(e) => onMediaDragOver(e, m.id, 'images_after')}
                                                 onDrop={(e) => onMediaDrop(e, m.id, 'images_after')}
-                                                onClick={() => setPreviewImage(m.original_url)}
-                                                className={`relative group aspect-square rounded-md overflow-hidden border bg-muted shadow-sm transition-all duration-200 cursor-pointer ${dragOverItem === m.id ? 'scale-105 ring-2 ring-primary ring-offset-2 z-10' : ''}`}
+                                                className={`flex flex-col gap-1 transition-all duration-200 ${dragOverItem === m.id ? 'scale-105 z-10' : ''}`}
                                             >
-                                                <img src={m.url} alt="Po" className="h-full w-full object-cover pointer-events-none" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                                                    <div className="flex justify-between w-full">
+                                                <div
+                                                    onClick={() => setPreviewImage(m.original_url)}
+                                                    className={`relative aspect-square rounded-t-md overflow-hidden border bg-muted shadow-sm cursor-pointer ${dragOverItem === m.id ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+                                                >
+                                                    <img src={m.url} alt="Po" className="h-full w-full object-cover pointer-events-none" />
+                                                </div>
+
+                                                <div className="flex items-center justify-between p-1 bg-background border border-t-0 rounded-b-md shadow-sm">
+                                                    <div className="flex gap-1">
                                                         <Button
-                                                            variant="secondary"
+                                                            variant="ghost"
                                                             size="icon"
-                                                            className="h-9 w-9 cursor-pointer shadow-lg border-2 border-white/20 bg-white/90"
+                                                            className="h-8 w-8 text-muted-foreground cursor-pointer"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setPreviewImage(m.original_url);
                                                             }}
                                                         >
-                                                            <LucideSearch className="h-5 w-5" />
+                                                            <LucideSearch className="h-4 w-4" />
                                                         </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            className="h-9 w-9 cursor-pointer shadow-lg border-2 border-white/20"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setMediaToDelete(m.id);
-                                                            }}
-                                                        >
-                                                            <LucideTrash2 className="h-5 w-5" />
-                                                        </Button>
-                                                    </div>
 
-                                                    <div className="flex gap-2 w-full justify-center">
                                                         {idx > 0 && (
                                                             <Button
-                                                                variant="secondary"
+                                                                variant="ghost"
                                                                 size="icon"
-                                                                className="h-9 w-9 cursor-pointer shadow-lg border-2 border-white/20 bg-white/90"
+                                                                className="h-8 w-8 cursor-pointer"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     moveMedia(m.id, 'up', 'images_after');
@@ -1029,9 +1025,9 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                         )}
                                                         {idx < job.media.images_after.length - 1 && (
                                                             <Button
-                                                                variant="secondary"
+                                                                variant="ghost"
                                                                 size="icon"
-                                                                className="h-9 w-9 cursor-pointer shadow-lg border-2 border-white/20 bg-white/90"
+                                                                className="h-8 w-8 cursor-pointer"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     moveMedia(m.id, 'down', 'images_after');
@@ -1041,6 +1037,18 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                             </Button>
                                                         )}
                                                     </div>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setMediaToDelete(m.id);
+                                                        }}
+                                                    >
+                                                        <LucideTrash2 className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
                                             </div>
                                         ))}

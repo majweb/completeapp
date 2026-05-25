@@ -1319,10 +1319,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                     </div>
 
                                                     <div className="bg-muted/50 p-4 rounded-lg border border-primary/20 space-y-3 mt-4">
-                                                        <p className="text-sm font-medium text-foreground leading-tight">
-                                                            Podpisując niniejszy raport, oświadczam, że prace zostały wykonane zgodnie ze zleceniem, w pełnym zakresie i bez zastrzeżeń. Niniejszym dokonuję odbioru prac i potwierdzam ich zgodność ze stanem faktycznym.
-                                                        </p>
-                                                        <div className="flex items-start gap-3 pt-2 border-t border-primary/10">
+                                                        <div className="flex items-start gap-3">
                                                             <div className="flex items-center h-5">
                                                                 <input
                                                                     id="declaration-checkbox"
@@ -1332,8 +1329,8 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                                     onChange={(e) => setIsDeclarationAccepted(e.target.checked)}
                                                                 />
                                                             </div>
-                                                            <label htmlFor="declaration-checkbox" className="text-xs font-semibold text-foreground cursor-pointer select-none">
-                                                                Akceptuję wykonane prace i oświadczam, że nie wnoszę do nich zastrzeżeń.
+                                                            <label htmlFor="declaration-checkbox" className="text-xs font-semibold text-foreground cursor-pointer select-none leading-normal">
+                                                                Podpisując niniejszy raport, oświadczam, że prace zostały wykonane zgodnie ze zleceniem, w pełnym zakresie i bez zastrzeżeń. Niniejszym dokonuję odbioru prac i potwierdzam ich zgodność ze stanem faktycznym.
                                                             </label>
                                                         </div>
                                                     </div>
@@ -1370,9 +1367,6 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                     Uzupełnij checklistę i wymagane zdjęcia, aby móc zebrać podpis.
                                                 </p>
                                             )}
-                                            <p className="text-xs font-medium text-foreground leading-tight text-center px-3 mt-3 bg-muted/30 p-2 rounded-md border border-primary/10">
-                                                Podpis stanowi oświadczenie woli o odbiorze przedmiotu zlecenia bez zastrzeżeń.
-                                            </p>
                                         </div>
                                     )}
                                     { (errors as any)['media.signature'] && (

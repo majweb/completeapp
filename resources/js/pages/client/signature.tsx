@@ -322,10 +322,7 @@ export default function Signature({ job, media }: Props) {
                             </CardHeader>
                             <CardContent className="space-y-4 pb-4 md:pb-6">
                                 <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 space-y-3">
-                                    <p className="text-sm font-medium text-slate-900 leading-tight">
-                                        Podpisując niniejszy raport, oświadczam, że prace zostały wykonane zgodnie ze zleceniem, w pełnym zakresie i bez zastrzeżeń. Niniejszym dokonuję odbioru prac i potwierdzam ich zgodność ze stanem faktycznym.
-                                    </p>
-                                    <div className="flex items-start gap-3 pt-2 border-t border-blue-100">
+                                    <div className="flex items-start gap-3">
                                         <div className="flex items-center h-5">
                                             <input
                                                 id="declaration-checkbox"
@@ -335,8 +332,8 @@ export default function Signature({ job, media }: Props) {
                                                 onChange={(e) => setIsDeclarationAccepted(e.target.checked)}
                                             />
                                         </div>
-                                        <label htmlFor="declaration-checkbox" className="text-xs font-semibold text-slate-700 cursor-pointer select-none">
-                                            Akceptuję wykonane prace i oświadczam, że nie wnoszę do nich zastrzeżeń.
+                                        <label htmlFor="declaration-checkbox" className="text-xs font-semibold text-slate-700 cursor-pointer select-none leading-normal">
+                                            Podpisując niniejszy raport, oświadczam, że prace zostały wykonane zgodnie ze zleceniem, w pełnym zakresie i bez zastrzeżeń. Niniejszym dokonuję odbioru prac i potwierdzam ich zgodność ze stanem faktycznym.
                                         </label>
                                     </div>
                                 </div>

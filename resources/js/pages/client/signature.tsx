@@ -312,7 +312,6 @@ export default function Signature({ job, media }: Props) {
                                 )}
                             </div>
                         )}
-
                         <Card className="border-blue-200 ring-1 ring-blue-100">
                             <CardHeader className="py-4 md:py-6">
                                 <CardTitle className="text-base md:text-lg flex items-center gap-2">

@@ -8,7 +8,7 @@ export default function AppLogo() {
 
     return (
         <>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground overflow-hidden">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-md text-sidebar-primary-foreground overflow-hidden">
                 {company?.logo_url ? (
                     <img src={company.logo_url} alt={company.name} className="size-full object-cover" />
                 ) : (

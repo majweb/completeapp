@@ -12,17 +12,19 @@ export default function AppSidebarLayout({
     breadcrumbs = [],
 }: AppLayoutProps) {
     const { auth } = usePage().props as any;
-    const isImpersonating = !!auth.impersonated_by;
+    const isImpersonating = !!auth?.impersonated_by;
 
     const handleStopImpersonating = () => {
-        router.post(stopImpersonating().url);
+        if (auth?.impersonated_by) {
+            router.post(stopImpersonating().url);
+        }
     };
 
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
             <AppContent variant="sidebar" className="overflow-x-hidden">
-                {isImpersonating && (
+                {isImpersonating && auth?.user && (
                     <div className="bg-yellow-500 text-white px-4 py-2 flex items-center justify-between text-sm font-medium">
                         <div className="flex items-center gap-2">
                             <span>Jesteś zalogowany jako <strong>{auth.user.name}</strong></span>

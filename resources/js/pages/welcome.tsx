@@ -4,12 +4,19 @@ import {
     Camera,
     ClipboardCheck,
     Download,
+    Hammer,
+    HardHat,
     LayoutDashboard,
+    Lightbulb,
+    Plug,
     Rocket,
     ShieldCheck,
     Signature,
     Sparkles,
+    Thermometer,
+    Truck,
     Users,
+    Wrench,
     Zap
 } from 'lucide-react';
 
@@ -60,9 +67,9 @@ export default function Welcome() {
                                 document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
                             }} className="hidden hover:text-[#f53003] md:block dark:hover:text-[#FF4433]">Jak to działa</a>
 
-                            <a href="#use-cases" onClick={(e) => {
+                            <a href="#industries" onClick={(e) => {
                                 e.preventDefault();
-                                document.getElementById('use-cases')?.scrollIntoView({ behavior: 'smooth' });
+                                document.getElementById('industries')?.scrollIntoView({ behavior: 'smooth' });
                             }} className="hidden hover:text-[#f53003] md:block dark:hover:text-[#FF4433]">Branże</a>
                             {auth.user ? (
                                 <Link
@@ -245,6 +252,42 @@ export default function Welcome() {
                                         <p className="text-[#706f6c] dark:text-[#A1A09A] leading-relaxed">
                                             {item.desc}
                                         </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Sekcja Branż i Zawodów - Nowa siatka */}
+                    <section id="industries" className="py-24 bg-white dark:bg-[#0a0a0a] scroll-mt-24 border-t border-[#19140005] dark:border-[#3E3E3A]/20">
+                        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                            <div className="mx-auto max-w-2xl text-center mb-16">
+                                <h2 className="text-base font-semibold leading-7 text-[#f53003] dark:text-[#FF4433]">Dla kogo jest Zlecenio?</h2>
+                                <p className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Jedna aplikacja, setki zastosowań</p>
+                                <p className="mt-4 text-lg text-[#706f6c] dark:text-[#A1A09A]">
+                                    Obsługujemy profesjonalistów z wielu branż, pomagając im w codziennej organizacji pracy.
+                                </p>
+                            </div>
+                            <div className="mx-auto grid max-w-none grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                                {[
+                                    { name: 'Elektrycy', icon: Zap },
+                                    { name: 'Hydraulicy', icon: Wrench },
+                                    { name: 'Serwis HVAC', icon: Thermometer },
+                                    { name: 'Budownictwo', icon: HardHat },
+                                    { name: 'Stolarze', icon: Hammer },
+                                    { name: 'Oświetlenie', icon: Lightbulb },
+                                    { name: 'Instalatorzy OZE', icon: Plug },
+                                    { name: 'Transport', icon: Truck },
+                                    { name: 'Serwis AGD', icon: Briefcase },
+                                    { name: 'Zespoły Sprzątające', icon: Sparkles },
+                                    { name: 'Ochrona i Alarmy', icon: ShieldCheck },
+                                    { name: 'Architekci Krajobrazu', icon: Camera },
+                                ].map((industry) => (
+                                    <div key={industry.name} className="flex flex-col items-center justify-center p-6 rounded-2xl bg-[#F8F8F8] dark:bg-[#161615] ring-1 ring-[#19140010] dark:ring-[#3E3E3A] hover:shadow-md transition-all group">
+                                        <div className="mb-4 p-3 rounded-full bg-white dark:bg-[#0a0a0a] ring-1 ring-[#19140005] dark:ring-[#3E3E3A] group-hover:scale-110 transition-transform">
+                                            <industry.icon className="h-6 w-6 text-[#f53003] dark:text-[#FF4433]" />
+                                        </div>
+                                        <span className="text-sm font-bold text-center">{industry.name}</span>
                                     </div>
                                 ))}
                             </div>

@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react';
 
 export function usePwaInstall() {
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-    const [isInstallable, setIsInstallable] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(() => (typeof window !== 'undefined' ? (window as any).deferredPwaPrompt : null));
+    const [isInstallable, setIsInstallable] = useState(() => {
+        if (typeof window === 'undefined') {
+            return false;
+        }
+
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            return false;
+        }
+
+        return !!(window as any).deferredPwaPrompt;
+    });
 
     useEffect(() => {
         console.log('PWA: usePwaInstall hook initialized');
+
         const handler = (e: any) => {
             console.log('PWA: beforeinstallprompt event fired');
             // Prevent Chrome 67 and earlier from automatically showing the prompt
@@ -13,6 +24,8 @@ export function usePwaInstall() {
             // Stash the event so it can be triggered later.
             setDeferredPrompt(e);
             setIsInstallable(true);
+            // Also update global
+            (window as any).deferredPwaPrompt = e;
         };
 
         window.addEventListener('beforeinstallprompt', handler);
@@ -21,13 +34,8 @@ export function usePwaInstall() {
             console.log('PWA: App installed');
             setIsInstallable(false);
         };
-        window.addEventListener('appinstalled', appInstalledHandler);
 
-        // Check if app is already installed
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            console.log('PWA: App is running in standalone mode');
-            setIsInstallable(false);
-        }
+        window.addEventListener('appinstalled', appInstalledHandler);
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handler);

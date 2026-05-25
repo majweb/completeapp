@@ -50,4 +50,10 @@ if ('serviceWorker' in navigator) {
             console.error('PWA: ServiceWorker registration failed: ', err);
         });
     });
+
+    // Capture beforeinstallprompt event globally to avoid missing it
+    window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('PWA: beforeinstallprompt captured globally');
+        (window as any).deferredPwaPrompt = e;
+    });
 }

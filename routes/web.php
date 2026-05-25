@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('clients/template', [ClientController::class, 'downloadTemplate'])->name('clients.template');
         Route::resource('clients', ClientController::class);
         Route::resource('jobs', JobController::class);
+        Route::post('jobs/{job}/duplicate', [JobController::class, 'duplicate'])->name('jobs.duplicate');
         Route::resource('job-templates', JobTemplateController::class);
         Route::resource('technicians', TechnicianController::class);
 

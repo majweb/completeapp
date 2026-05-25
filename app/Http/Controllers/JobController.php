@@ -509,4 +509,46 @@ class JobController extends Controller
 
         return redirect()->route('jobs.index');
     }
+
+    public function duplicate(Job $job, SubscriptionService $subscriptionService)
+    {
+        Gate::authorize('create', Job::class);
+        Gate::authorize('view', $job);
+
+        $company = auth()->user()->company;
+
+        // Sprawdź limit zleceń w tym miesiącu
+        $limit = $subscriptionService->getLimit($company, 'jobs_per_month');
+        $currentMonthCount = Job::where('company_id', $company->id)
+            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->count();
+
+        if ($currentMonthCount >= $limit) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Osiągnięto limit zleceń na ten miesiąc dla Twojego planu.',
+            ]);
+
+            return redirect()->back();
+        }
+
+        return DB::transaction(function () use ($job) {
+            $newJob = Job::withoutEvents(function () use ($job) {
+                return Job::create([
+                    'company_id' => $job->company_id,
+                    'client_id' => $job->client_id,
+                    'template_id' => $job->template_id,
+                    'assigned_to' => $job->assigned_to,
+                    'status' => JobStatus::NEW,
+                    'scheduled_at' => now()->addDay()->setHour(9)->setMinute(0),
+                ]);
+            });
+
+            $newJob->template->generateChecklist($newJob);
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Zlecenie zostało zduplikowane.']);
+
+            return redirect()->route('jobs.index');
+        });
+    }
 }

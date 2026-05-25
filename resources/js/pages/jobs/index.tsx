@@ -1,10 +1,10 @@
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import { pickBy } from 'lodash';
-import { LucideCalendar, LucidePlus, LucideUser, LucideTrash2, LucideSearch, LucideFilter, LucideX, LucideChevronLeft, LucideChevronRight } from 'lucide-react';
+import { LucideCalendar, LucidePlus, LucideUser, LucideTrash2, LucideSearch, LucideFilter, LucideX, LucideChevronLeft, LucideChevronRight, LucideCopy } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useDebounce } from 'react-use';
 
-import { destroy as destroyAction } from '@/actions/App/Http/Controllers/JobController';
+import { destroy as destroyAction, duplicate as duplicateAction } from '@/actions/App/Http/Controllers/JobController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,7 +71,8 @@ export default function Index({ jobs, filters, technicians }: Props) {
     const isTechnician = user.role === 'technician';
 
     const [jobToDelete, setJobToDelete] = useState<number | null>(null);
-    const { delete: destroy, processing } = useForm();
+    const [jobToDuplicate, setJobToDuplicate] = useState<number | null>(null);
+    const { delete: destroy, post, processing } = useForm();
 
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || 'all');
@@ -131,6 +132,15 @@ export default function Index({ jobs, filters, technicians }: Props) {
             destroy(destroyAction.url({ job: jobToDelete }), {
                 onSuccess: () => setJobToDelete(null),
                 onFinish: () => setJobToDelete(null),
+            });
+        }
+    };
+
+    const confirmDuplicate = () => {
+        if (jobToDuplicate) {
+            post(duplicateAction.url({ job: jobToDuplicate }), {
+                onSuccess: () => setJobToDuplicate(null),
+                onFinish: () => setJobToDuplicate(null),
             });
         }
     };
@@ -291,12 +301,24 @@ export default function Index({ jobs, filters, technicians }: Props) {
                                     <Badge variant="secondary" className={`${statusColors[job.status] || 'bg-slate-500'} text-[9px] px-1.5 py-0 h-4 text-white border-0`}>
                                         {statusLabels[job.status] || job.status}
                                     </Badge>
+                                    {!isTechnician && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-muted-foreground hover:text-primary cursor-pointer"
+                                            onClick={() => setJobToDuplicate(job.id)}
+                                            title="Duplikuj zlecenie"
+                                        >
+                                            <LucideCopy className="h-3 w-3" />
+                                        </Button>
+                                    )}
                                     {(!isTechnician || job.technician?.id === user.id) && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             className="h-6 w-6 text-destructive/50 hover:text-destructive cursor-pointer"
                                             onClick={() => setJobToDelete(job.id)}
+                                            title="Usuń zlecenie"
                                         >
                                             <LucideTrash2 className="h-3 w-3" />
                                         </Button>
@@ -384,6 +406,26 @@ export default function Index({ jobs, filters, technicians }: Props) {
                         </DialogClose>
                         <Button variant="destructive" onClick={confirmDelete} disabled={processing}>
                             Usuń zlecenie
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog potwierdzenia duplikowania */}
+            <Dialog open={!!jobToDuplicate} onOpenChange={(open) => !open && setJobToDuplicate(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Czy chcesz zduplikować to zlecenie?</DialogTitle>
+                        <DialogDescription>
+                            Zostanie utworzone nowe zlecenie z tym samym klientem, technikiem i szablonem. Data wykonania zostanie ustawiona na jutro rano.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="ghost">Anuluj</Button>
+                        </DialogClose>
+                        <Button onClick={confirmDuplicate} disabled={processing}>
+                            Zduplikuj zlecenie
                         </Button>
                     </DialogFooter>
                 </DialogContent>

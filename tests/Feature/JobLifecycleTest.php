@@ -229,3 +229,27 @@ test('cannot see jobs from another company', function () {
     $response = $this->get(route('jobs.show', $otherJob));
     $response->assertStatus(404);
 });
+
+test('can duplicate job', function () {
+    $job = Job::create([
+        'company_id' => $this->company->id,
+        'client_id' => $this->client->id,
+        'template_id' => $this->template->id,
+        'assigned_to' => $this->user->id,
+        'status' => JobStatus::COMPLETED,
+        'scheduled_at' => now()->subDay(),
+    ]);
+
+    $response = $this->post(route('jobs.duplicate', $job));
+
+    $response->assertRedirect(route('jobs.index'));
+    $response->assertSessionHas('inertia.flash_data', fn ($data) => $data['toast']['message'] === 'Zlecenie zostało zduplikowane.');
+
+    $newJob = Job::where('id', '!=', $job->id)->first();
+    expect($newJob->client_id)->toBe($job->client_id);
+    expect($newJob->template_id)->toBe($job->template_id);
+    expect($newJob->assigned_to)->toBe($job->assigned_to);
+    expect($newJob->status)->toBe(JobStatus::NEW);
+    expect($newJob->checklist)->not->toBeNull();
+    expect($newJob->auditLogs)->toHaveCount(0);
+});

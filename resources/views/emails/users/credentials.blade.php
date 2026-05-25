@@ -5,8 +5,11 @@ Zostało dla Ciebie utworzone konto w systemie **{{ config('app.name') }}**.
 
 Możesz teraz zalogować się, korzystając z poniższych danych:
 
-**Adres email:** {{ $user->email }}
-**Hasło:** {{ $password }}
+**Adres email:**
+{{ $user->email }}
+
+**Hasło:**
+{{ $password }}
 
 <x-mail::button :url="config('app.url')">
 Zaloguj się do systemu

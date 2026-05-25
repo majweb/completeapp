@@ -1,6 +1,6 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import imageCompression from 'browser-image-compression';
-import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock, LucideExternalLink, LucideSearch } from 'lucide-react';
+import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock, LucideExternalLink, LucideSearch, LucideCopy } from 'lucide-react';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import SignaturePad from 'signature_pad';
 
@@ -47,6 +47,7 @@ interface AuditLog {
 
 interface Job {
     id: number;
+    uuid: string;
     status: string;
     scheduled_at: string;
     started_at: string | null;
@@ -116,6 +117,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     const [isSignatureSaving, setIsSignatureSaving] = useState(false);
     const [isDeclarationAccepted, setIsDeclarationAccepted] = useState(false);
     const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
     const [mediaToDelete, setMediaToDelete] = useState<number | null>(null);
     const [dragOver, setDragOver] = useState<string | null>(null);
     const [uploadingCollection, setUploadingCollection] = useState<string | null>(null);
@@ -409,6 +411,13 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
         router.post(generateSummaryRoute(job.id).url, {}, {
             preserveScroll: true,
         });
+    };
+
+    const handleCopyPublicLink = () => {
+        const url = window.location.origin + '/view/job/' + job.uuid;
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     const updateChecklist = (index: number, value: any) => {
@@ -1253,7 +1262,29 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                 <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground uppercase">Klient</Label>
                                     <p className="font-semibold">{job.client?.name}</p>
-                                    <div className="flex items-center gap-2">
+
+                                    <div className="pt-2">
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="w-full text-xs h-8 cursor-pointer"
+                                            onClick={handleCopyPublicLink}
+                                        >
+                                            {copied ? (
+                                                <>
+                                                    <LucideCheck className="mr-2 h-3 w-3 text-green-500" />
+                                                    Skopiowano link!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <LucideCopy className="mr-2 h-3 w-3" />
+                                                    Kopiuj link dla klienta
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 pt-2">
                                         <p className="text-sm flex-1">{job.client?.address}</p>
                                         {job.client?.address && (
                                             <Button

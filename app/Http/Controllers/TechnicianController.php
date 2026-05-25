@@ -33,6 +33,21 @@ class TechnicianController extends Controller
         ]);
     }
 
+    public function create(SubscriptionService $subscriptionService)
+    {
+        Gate::authorize('create', User::class);
+
+        $company = auth()->user()->company;
+        $currentCount = User::where('company_id', $company->id)
+            ->whereIn('role', ['technician', 'manager'])
+            ->count();
+
+        return Inertia::render('technicians/create', [
+            'canAddMore' => $currentCount < $subscriptionService->getLimit($company, 'technicians'),
+            'limit' => $subscriptionService->getLimit($company, 'technicians'),
+        ]);
+    }
+
     public function store(Request $request, SubscriptionService $subscriptionService)
     {
         Gate::authorize('create', User::class);
@@ -48,7 +63,7 @@ class TechnicianController extends Controller
                 'message' => 'Osiągnięto limit techników dla Twojego planu.',
             ]);
 
-            return redirect()->back();
+            return redirect()->route('technicians.index');
         }
 
         $validated = $request->validate([
@@ -58,6 +73,11 @@ class TechnicianController extends Controller
             'role' => 'required|string|in:technician,manager',
             'is_active' => 'boolean',
             'send_credentials' => 'boolean',
+        ], [], [
+            'name' => 'imię i nazwisko',
+            'email' => 'adres e-mail',
+            'password' => 'hasło',
+            'role' => 'rola',
         ]);
 
         $user = User::create([
@@ -75,7 +95,16 @@ class TechnicianController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Pracownik został dodany.']);
 
-        return back();
+        return redirect()->route('technicians.index');
+    }
+
+    public function edit(User $technician)
+    {
+        Gate::authorize('update', $technician);
+
+        return Inertia::render('technicians/edit', [
+            'technician' => $technician,
+        ]);
     }
 
     public function update(Request $request, User $technician)
@@ -88,6 +117,11 @@ class TechnicianController extends Controller
             'password' => 'nullable|string|min:8',
             'role' => 'required|string|in:technician,manager',
             'is_active' => 'boolean',
+        ], [], [
+            'name' => 'imię i nazwisko',
+            'email' => 'adres e-mail',
+            'password' => 'hasło',
+            'role' => 'rola',
         ]);
 
         $technician->update([
@@ -103,7 +137,7 @@ class TechnicianController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Dane pracownika zostały zaktualizowane.']);
 
-        return back();
+        return redirect()->route('technicians.index');
     }
 
     public function destroy(User $technician)

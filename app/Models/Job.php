@@ -9,6 +9,7 @@ use App\Enums\JobStatus;
 use App\Traits\BelongsToCompany;
 use App\Traits\Auditable;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -16,9 +17,14 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Job extends Model implements HasMedia
 {
-    use InteractsWithMedia, BelongsToCompany, Auditable, HasFactory;
+    use InteractsWithMedia, BelongsToCompany, Auditable, HasFactory, HasUuids;
 
     protected $table = 'work_jobs';
+
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
 
     protected $fillable = [
         'company_id',

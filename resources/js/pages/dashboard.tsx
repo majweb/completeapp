@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Bell, Briefcase, CheckCircle, Clock, MapPin, Users, ChevronDown, ChevronUp, Home } from 'lucide-react';
+import { Bell, Briefcase, CheckCircle, Clock, MapPin, Users, ChevronDown, ChevronUp, Home, HelpCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Area, AreaChart, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
 
@@ -8,7 +8,7 @@ import JobMap from '@/components/job-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { dashboard, home } from '@/routes';
+import { dashboard, home, rolesGuide } from '@/routes';
 
 const STATUS_LABELS: Record<string, string> = {
     new: 'Nowe',
@@ -100,12 +100,20 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
                         <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Witaj, {auth.user.name}</h2>
                         <p className="text-muted-foreground text-xs sm:text-sm">Oto co dzieje się dzisiaj w Twojej firmie.</p>
                     </div>
-                    <Button variant="outline" size="sm" asChild className="gap-2 w-full sm:w-auto">
-                        <Link href={home()}>
-                            <Home className="h-4 w-4" />
-                            Powrót do strony głównej
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Button variant="outline" size="sm" asChild className="gap-2 flex-1 sm:flex-none">
+                            <Link href={rolesGuide()}>
+                                <HelpCircle className="h-4 w-4" />
+                                Instrukcje
+                            </Link>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild className="gap-2 flex-1 sm:flex-none">
+                            <Link href={home()}>
+                                <Home className="h-4 w-4" />
+                                Strona główna
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {hasNewJobs && (

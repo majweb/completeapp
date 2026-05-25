@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\JobTemplateController;
 use App\Http\Controllers\ClientSignatureController;
+use App\Http\Controllers\PublicJobController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -22,7 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('clients', ClientController::class);
         Route::resource('jobs', JobController::class);
         Route::resource('job-templates', JobTemplateController::class);
-        Route::resource('technicians', TechnicianController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('technicians', TechnicianController::class);
 
         Route::post('jobs/{job}/media', [JobController::class, 'uploadMedia'])->name('jobs.uploadMedia');
         Route::delete('jobs/{job}/media/{media}', [JobController::class, 'deleteMedia'])->name('jobs.deleteMedia');
@@ -43,6 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/subscription/invoices/{invoice}', [CompanyController::class, 'downloadInvoice'])->name('subscription.invoices.download');
 
         Route::inertia('/roles-guide', 'roles-guide')->name('roles-guide');
+        Route::get('/guide/download', [App\Http\Controllers\GuideController::class, 'downloadPdf'])->name('guide.download');
 
         Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
         Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
@@ -62,5 +64,7 @@ Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookControl
 
 Route::get('public/jobs/{job}/signature', [ClientSignatureController::class, 'show'])->name('client.signature.show');
 Route::post('public/jobs/{job}/signature', [ClientSignatureController::class, 'store'])->name('client.signature.store');
+
+Route::get('view/job/{job:uuid}', [PublicJobController::class, 'show'])->name('public.job.show');
 
 require __DIR__.'/settings.php';

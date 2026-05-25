@@ -1,18 +1,14 @@
-import { Head, useForm } from '@inertiajs/react';
-import { LucidePlus, LucideTrash2, LucidePencil, LucideUser, LucideMail, LucideLock, LucideShieldCheck, LucideRefreshCw } from 'lucide-react';
+import { Head, useForm, Link } from '@inertiajs/react';
+import { LucidePlus, LucideTrash2, LucidePencil } from 'lucide-react';
 import React, { useState } from 'react';
 
-import { store, update, destroy as destroyAction } from '@/actions/App/Http/Controllers/TechnicianController';
+import { destroy as destroyAction } from '@/actions/App/Http/Controllers/TechnicianController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { index as techniciansIndex } from '@/routes/technicians';
+import { index as techniciansIndex, create as techniciansCreate, edit as techniciansEdit } from '@/routes/technicians';
 
 interface Technician {
     id: number;
@@ -27,63 +23,9 @@ interface Props {
 }
 
 export default function Index({ technicians }: Props) {
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [editingTechnician, setEditingTechnician] = useState<Technician | null>(null);
     const [technicianToDelete, setTechnicianToDelete] = useState<number | null>(null);
 
-    const { data, setData, post, put, delete: destroy, processing, errors, reset } = useForm({
-        name: '',
-        email: '',
-        password: '',
-        role: 'technician',
-        is_active: true,
-        send_credentials: false,
-    });
-
-    const generatePassword = () => {
-        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
-        let retVal = '';
-
-        for (let i = 0; i < 12; ++i) {
-            retVal += charset.charAt(Math.floor(Math.random() * charset.length));
-        }
-
-        setData('password', retVal);
-    };
-
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (editingTechnician) {
-            put(update.url({ technician: editingTechnician.id }), {
-                onSuccess: () => {
-                    setIsCreateOpen(false);
-                    setEditingTechnician(null);
-                    reset();
-                },
-            });
-        } else {
-            post(store.url(), {
-                onSuccess: () => {
-                    setIsCreateOpen(false);
-                    reset();
-                },
-            });
-        }
-    };
-
-    const editTechnician = (tech: Technician) => {
-        setEditingTechnician(tech);
-
-        setData({
-            name: tech.name,
-            email: tech.email,
-            password: '',
-            role: tech.role,
-            is_active: !!tech.is_active,
-        });
-        setIsCreateOpen(true);
-    };
+    const { delete: destroy, processing } = useForm();
 
     const confirmDelete = () => {
         if (technicianToDelete) {
@@ -103,139 +45,12 @@ export default function Index({ technicians }: Props) {
                         <h1 className="text-2xl font-bold">Technicy</h1>
                         <p className="text-muted-foreground">Zarządzaj dostępem dla swoich pracowników mobilnych.</p>
                     </div>
-                    <Dialog open={isCreateOpen} onOpenChange={(open) => {
-                        setIsCreateOpen(open);
-
-                        if (!open) {
-                            setEditingTechnician(null);
-                            reset();
-                        }
-                    }}>
-                        <DialogTrigger asChild>
-                            <Button className="cursor-pointer">
-                                <LucidePlus className="mr-2 h-4 w-4" />
-                                Dodaj technika
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>{editingTechnician ? 'Edytuj technika' : 'Dodaj nowego technika'}</DialogTitle>
-                                <DialogDescription>
-                                    Wprowadź dane dostępowe dla pracownika. Technik będzie mógł logować się do aplikacji mobilnej.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <form onSubmit={submit} className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="name">Imię i nazwisko</Label>
-                                    <div className="relative">
-                                        <LucideUser className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="name"
-                                            value={data.name}
-                                            onChange={(e) => setData('name', e.target.value)}
-                                            className="pl-10"
-                                            placeholder="np. Jan Kowalski"
-                                        />
-                                    </div>
-                                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <div className="relative">
-                                        <LucideMail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            value={data.email}
-                                            onChange={(e) => setData('email', e.target.value)}
-                                            className="pl-10"
-                                            placeholder="jan@firma.pl"
-                                        />
-                                    </div>
-                                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="password">{editingTechnician ? 'Nowe hasło (opcjonalnie)' : 'Hasło'}</Label>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <LucideLock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="password"
-                                                type={editingTechnician ? 'password' : 'text'}
-                                                value={data.password}
-                                                onChange={(e) => setData('password', e.target.value)}
-                                                className="pl-10"
-                                                placeholder="min. 8 znaków"
-                                            />
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={generatePassword}
-                                            title="Generuj losowe hasło"
-                                            className="cursor-pointer"
-                                        >
-                                            <LucideRefreshCw className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="role">Rola</Label>
-                                    <Select value={data.role} onValueChange={(value) => setData('role', value)}>
-                                        <SelectTrigger className="w-full">
-                                            <div className="flex items-center gap-2">
-                                                <LucideShieldCheck className="h-4 w-4 text-muted-foreground" />
-                                                <SelectValue placeholder="Wybierz rolę" />
-                                            </div>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="technician">Technik (User mobilny)</SelectItem>
-                                            <SelectItem value="manager">Manager (Dostęp webowy)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.role && <p className="text-xs text-destructive">{errors.role}</p>}
-                                </div>
-                                <div className="flex flex-col gap-4 py-2">
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="is_active"
-                                            checked={data.is_active}
-                                            onCheckedChange={(checked) => setData('is_active', !!checked)}
-                                        />
-                                        <div className="grid gap-1.5 leading-none">
-                                            <Label htmlFor="is_active" className="cursor-pointer font-medium">Konto aktywne</Label>
-                                            <p className="text-xs text-muted-foreground">
-                                                Nieaktywni użytkownicy nie mogą logować się do systemu.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {!editingTechnician && (
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id="send_credentials"
-                                                checked={data.send_credentials}
-                                                onCheckedChange={(checked) => setData('send_credentials', !!checked)}
-                                            />
-                                            <div className="grid gap-1.5 leading-none">
-                                                <Label htmlFor="send_credentials" className="cursor-pointer font-medium">Wyślij dane do logowania</Label>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Użytkownik otrzyma e-mail z hasłem i instrukcją logowania.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                <DialogFooter>
-                                    <Button type="submit" disabled={processing} className="cursor-pointer">
-                                        {editingTechnician ? 'Zapisz zmiany' : 'Dodaj technika'}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    <Button className="cursor-pointer" asChild>
+                        <Link href={techniciansCreate()}>
+                            <LucidePlus className="mr-2 h-4 w-4" />
+                            Dodaj technika
+                        </Link>
+                    </Button>
                 </div>
 
                 <Card>
@@ -272,8 +87,10 @@ export default function Index({ technicians }: Props) {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" onClick={() => editTechnician(tech)} className="cursor-pointer">
-                                                    <LucidePencil className="h-4 w-4" />
+                                                <Button variant="ghost" size="icon" asChild className="cursor-pointer">
+                                                    <Link href={techniciansEdit({ technician: tech.id })}>
+                                                        <LucidePencil className="h-4 w-4" />
+                                                    </Link>
                                                 </Button>
                                                 <Button variant="ghost" size="icon" onClick={() => setTechnicianToDelete(tech.id)} className="text-destructive cursor-pointer">
                                                     <LucideTrash2 className="h-4 w-4" />

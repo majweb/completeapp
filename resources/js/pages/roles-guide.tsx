@@ -1,33 +1,11 @@
 import { Head, usePage } from '@inertiajs/react';
-import { ShieldCheck, HardHat, Briefcase, CheckCircle2, XCircle, BadgeCheck } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Briefcase, Camera, CheckCircle2, ClipboardCheck, Download, HardHat, Info, PenTool, Settings, ShieldCheck, Users as UsersIcon, XCircle } from 'lucide-react';
+
+import { downloadPdf } from '@/actions/App/Http/Controllers/GuideController';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import AppLayout from '@/layouts/app-layout';
-
-const roles = [
-    {
-        id: 'owner',
-        name: 'Właściciel (Owner)',
-        description: 'Pełna kontrola nad firmą, subskrypcjami i ustawieniami.',
-        icon: ShieldCheck,
-        color: 'text-red-600 bg-red-50',
-    },
-    {
-        id: 'manager',
-        name: 'Manager',
-        description: 'Zarządzanie operacyjne zleceniami, klientami i zespołem.',
-        icon: Briefcase,
-        color: 'text-blue-600 bg-blue-50',
-    },
-    {
-        id: 'technician',
-        name: 'Technik (Mobile User)',
-        description: 'Realizacja zleceń w terenie, wypełnianie checklist i dokumentacja foto.',
-        icon: HardHat,
-        color: 'text-orange-600 bg-orange-50',
-    },
-];
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const permissions = [
     { feature: 'Dashboard / Statystyki', owner: true, manager: true, technician: 'Tylko własne' },
@@ -48,43 +26,133 @@ export default function RolesGuide() {
 
     return (
         <>
-            <Head title="Przewodnik po rolach" />
+            <Head title="Przewodnik po rolach i instrukcje" />
             <div className="py-8 px-4 w-full">
-                <div className="mb-8">
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Przewodnik po rolach użytkowników</h1>
-                    <p className="text-muted-foreground mt-2 text-sm md:text-base">
-                        Dowiedz się, jakie możliwości oferuje Twoje konto i jakie uprawnienia posiadają poszczególni członkowie zespołu.
-                    </p>
+                <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Przewodnik po rolach i instrukcje</h1>
+                        <p className="text-muted-foreground mt-2 text-sm md:text-base">
+                            Dowiedz się, jakie możliwości oferuje Twoje konto i jak korzystać z systemu.
+                        </p>
+                    </div>
+                    <Button asChild variant="outline" className="gap-2">
+                        <a href={downloadPdf.url()} target="_blank" rel="noopener noreferrer">
+                            <Download className="w-4 h-4" />
+                            Pobierz instrukcję PDF
+                        </a>
+                    </Button>
                 </div>
 
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-3 mb-10">
-                    {roles.map((role) => (
-                        <Card
-                            key={role.name}
-                            className={`relative overflow-hidden transition-all duration-300 ${
-                                userRole === role.id
-                                    ? 'ring-2 ring-primary border-primary bg-primary/5 shadow-md'
-                                    : 'hover:border-primary/50'
-                            }`}
-                        >
-                            {userRole === role.id && (
-                                <div className="absolute top-0 right-0 p-2">
-                                    <Badge variant="default" className="flex items-center gap-1 font-medium bg-primary text-primary-foreground">
-                                        <BadgeCheck className="w-3 h-3" />
-                                        Twoja rola
-                                    </Badge>
-                                </div>
-                            )}
-                            <CardHeader className="space-y-1">
-                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-2 ${role.color}`}>
-                                    <role.icon className="w-6 h-6" />
-                                </div>
-                                <CardTitle className="text-xl">{role.name}</CardTitle>
-                                <CardDescription>{role.description}</CardDescription>
+                <Tabs defaultValue={userRole || 'owner'} className="mb-10">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="owner" className="flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4" /> <span className="hidden sm:inline">Właściciel</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="manager" className="flex items-center gap-2">
+                            <Briefcase className="w-4 h-4" /> <span className="hidden sm:inline">Manager</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="technician" className="flex items-center gap-2">
+                            <HardHat className="w-4 h-4" /> <span className="hidden sm:inline">Technik</span>
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="owner" className="mt-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-red-600">
+                                    <ShieldCheck className="w-5 h-5" /> Instrukcja dla Właściciela
+                                </CardTitle>
+                                <CardDescription>Pełna kontrola nad organizacją i finansami.</CardDescription>
                             </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><PenTool className="w-4 h-4" /> Tworzenie Zleceń</h4>
+                                        <p className="text-sm text-muted-foreground">Jako Właściciel możesz samodzielnie dodawać nowe zlecenia, przypisywać je do techników i zarządzać ich przebiegiem.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><Settings className="w-4 h-4" /> Konfiguracja Firmy</h4>
+                                        <p className="text-sm text-muted-foreground">W sekcji "Ustawienia Firmy" zdefiniuj dane adresowe, NIP oraz wgraj logo, które będzie widoczne na raportach dla klientów.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><UsersIcon className="w-4 h-4" /> Zarządzanie Zespołem</h4>
+                                        <p className="text-sm text-muted-foreground">Dodawaj pracowników w sekcji "Technicy". Pamiętaj, że możesz im przypisać rolę Technika lub Managera.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Monitoring i Limity</h4>
+                                        <p className="text-sm text-muted-foreground">Śledź wykorzystanie limitów zleceń w swoim planie w sekcji "Subskrypcja".</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><Info className="w-4 h-4" /> Pełny wgląd</h4>
+                                        <p className="text-sm text-muted-foreground">Jako właściciel widzisz wszystkie zlecenia i masz dostęp do wszystkich funkcji systemu bez ograniczeń.</p>
+                                    </div>
+                                </div>
+                            </CardContent>
                         </Card>
-                    ))}
-                </div>
+                    </TabsContent>
+
+                    <TabsContent value="manager" className="mt-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-blue-600">
+                                    <Briefcase className="w-5 h-5" /> Instrukcja dla Managera
+                                </CardTitle>
+                                <CardDescription>Koordynacja zleceń i zarządzanie bazą klientów.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><PenTool className="w-4 h-4" /> Planowanie Prac</h4>
+                                        <p className="text-sm text-muted-foreground">Twórz nowe zlecenia, przypisując je do techników. Wybieraj odpowiednie szablony checklist dla danego typu pracy.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><ClipboardCheck className="w-4 h-4" /> Szablony</h4>
+                                        <p className="text-sm text-muted-foreground">Definiuj standardy pracy poprzez tworzenie szablonów prac. To one determinują, co technik musi sprawdzić na miejscu.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><UsersIcon className="w-4 h-4" /> Relacje z Klientami</h4>
+                                        <p className="text-sm text-muted-foreground">Zarządzaj bazą klientów. Możesz korzystać z funkcji importu z pliku CSV, aby szybko dodać wielu kontrahentów.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><Download className="w-4 h-4" /> Raportowanie</h4>
+                                        <p className="text-sm text-muted-foreground">Weryfikuj zakończone zlecenia. Pobieraj raporty PDF i wysyłaj je bezpośrednio do klientów z poziomu systemu.</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="technician" className="mt-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-orange-600">
+                                    <HardHat className="w-5 h-5" /> Instrukcja dla Technika
+                                </CardTitle>
+                                <CardDescription>Praca w terenie i dokumentacja mobilna.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><Info className="w-4 h-4" /> Twoje Zlecenia</h4>
+                                        <p className="text-sm text-muted-foreground">Na Dashboardzie i liście zleceń widzisz tylko prace przypisane do Ciebie. Zmieniaj statusy, aby zespół wiedział, na jakim etapie jesteś.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><Camera className="w-4 h-4" /> Dokumentacja Foto</h4>
+                                        <p className="text-sm text-muted-foreground">Rób zdjęcia przed rozpoczęciem i po zakończeniu pracy. Zdjęcia są automatycznie dołączane do raportu końcowego.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><ClipboardCheck className="w-4 h-4" /> Wypełnianie Checklisty</h4>
+                                        <p className="text-sm text-muted-foreground">Odznaczaj wykonane kroki w systemie. System nie pozwoli zakończyć zlecenia bez wypełnienia wymaganych pól.</p>
+                                    </div>
+                                    <div className="space-y-2 border p-4 rounded-lg">
+                                        <h4 className="font-semibold flex items-center gap-2"><PenTool className="w-4 h-4" /> Podpis Klienta</h4>
+                                        <p className="text-sm text-muted-foreground">Po skończonej pracy poproś klienta o podpis bezpośrednio na Twoim telefonie/tablecie w aplikacji.</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
 
                 <Card className="overflow-hidden">
                     <CardHeader>

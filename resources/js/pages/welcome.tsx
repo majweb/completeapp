@@ -5,9 +5,12 @@ import {
     ClipboardCheck,
     Download,
     Hammer,
+    Flame,
     HardHat,
     LayoutDashboard,
     Lightbulb,
+    Lock,
+    Menu,
     Plug,
     Rocket,
     ShieldCheck,
@@ -19,20 +22,29 @@ import {
     Wrench,
     Zap
 } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
 import { usePwaInstall } from '@/hooks/use-pwa-install';
 import { dashboard, login, register } from '@/routes';
 
 export default function Welcome() {
     const { auth } = usePage().props;
     const { isInstallable, install } = usePwaInstall();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     return (
         <>
             <Head>
                 <title>Zlecenio - Nowoczesne Zarządzanie Zleceniami Terenowymi</title>
-                <meta name="description" content="Zlecenio to nowoczesna platforma FSM do zarządzania zleceniami w terenie. Digitalizuj checklisty, zbieraj podpisy i generuj raporty AI." />
+                <meta name="description" content="Zlecenio to prosta aplikacja dla Twojej ekipy. Zapomnij o papierach – twórz zlecenia, wypełniaj protokoły i zbieraj podpisy na telefonie." />
 
                 {/* Open Graph / Facebook */}
                 <meta property="og:type" content="website" />
@@ -53,49 +65,108 @@ export default function Welcome() {
                 {/* Header/Navbar */}
                 <header className="sticky top-0 z-50 border-b border-[#19140015] bg-[#FDFDFC]/80 backdrop-blur-md dark:border-[#3E3E3A]/50 dark:bg-[#0a0a0a]/80">
                     <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                             <img src="/logo-full-croped.png" alt="Zlecenio" className="h-8 w-auto" />
                         </div>
-                        <nav className="flex items-center gap-4 lg:gap-8 text-sm font-medium">
-                            <a href="#features" onClick={(e) => {
-                                e.preventDefault();
-                                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                            }} className="hidden hover:text-[#f53003] md:block dark:hover:text-[#FF4433]">Funkcje</a>
+                        <div className="flex items-center gap-4 lg:gap-8 text-sm font-medium">
+                            <nav className="hidden items-center gap-4 lg:gap-8 md:flex">
+                                <a href="#features" onClick={(e) => {
+                                    e.preventDefault();
+                                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                                }} className="hover:text-[#f53003] dark:hover:text-[#FF4433] cursor-pointer">Funkcje</a>
 
-                            <a href="#how-it-works" onClick={(e) => {
-                                e.preventDefault();
-                                document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
-                            }} className="hidden hover:text-[#f53003] md:block dark:hover:text-[#FF4433]">Jak to działa</a>
+                                <a href="#how-it-works" onClick={(e) => {
+                                    e.preventDefault();
+                                    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+                                }} className="hover:text-[#f53003] dark:hover:text-[#FF4433] cursor-pointer">Jak to działa</a>
 
-                            <a href="#industries" onClick={(e) => {
-                                e.preventDefault();
-                                document.getElementById('industries')?.scrollIntoView({ behavior: 'smooth' });
-                            }} className="hidden hover:text-[#f53003] md:block dark:hover:text-[#FF4433]">Branże</a>
+                                <a href="#industries" onClick={(e) => {
+                                    e.preventDefault();
+                                    document.getElementById('industries')?.scrollIntoView({ behavior: 'smooth' });
+                                }} className="hover:text-[#f53003] dark:hover:text-[#FF4433] cursor-pointer">Branże</a>
+                            </nav>
+
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
                                     className="inline-flex items-center gap-2 rounded-full bg-[#1b1b18] px-5 py-2 text-white hover:bg-[#1b1b18]/90 dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white transition-all shadow-sm"
                                 >
                                     <LayoutDashboard className="h-4 w-4" />
-                                    <span>Panel główny</span>
+                                    <span className="hidden sm:inline">Panel główny</span>
                                 </Link>
                             ) : (
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 sm:gap-3">
                                     <Link
                                         href={login()}
-                                        className="rounded-full border border-[#19140015] px-5 py-2 hover:bg-black/5 dark:border-[#3E3E3A] dark:hover:bg-white/5"
+                                        className="rounded-full border border-[#19140015] px-4 py-2 hover:bg-black/5 dark:border-[#3E3E3A] dark:hover:bg-white/5 text-xs sm:text-sm"
                                     >
                                         Zaloguj
                                     </Link>
                                     <Link
                                         href={register()}
-                                        className="rounded-full bg-[#f53003] px-5 py-2 text-white hover:bg-[#f53003]/90 dark:bg-[#FF4433] dark:hover:bg-[#FF4433]/90 transition-all shadow-sm"
+                                        className="rounded-full bg-[#f53003] px-4 py-2 text-white hover:bg-[#f53003]/90 dark:bg-[#FF4433] dark:hover:bg-[#FF4433]/90 transition-all shadow-sm text-xs sm:text-sm"
                                     >
                                         Darmowe testy
                                     </Link>
                                 </div>
                             )}
-                        </nav>
+
+                            {/* Mobile Menu */}
+                            <div className="md:hidden">
+                                <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                                    <SheetTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 cursor-pointer">
+                                            <Menu className="h-5 w-5" />
+                                        </Button>
+                                    </SheetTrigger>
+                                    <SheetContent side="right" className="w-full sm:w-full border-l-0 dark:bg-[#0a0a0a]">
+                                        <SheetHeader className="text-left border-b border-[#19140015] dark:border-[#3E3E3A]/50 pb-4 mb-4">
+                                            <SheetTitle className="flex items-center gap-2">
+                                                <img src="/logo-full-croped.png" alt="Zlecenio" className="h-6 w-auto" />
+                                            </SheetTitle>
+                                        </SheetHeader>
+                                        <div className="flex flex-col gap-6 mt-6">
+                                            <a href="#features" onClick={(e) => {
+                                                e.preventDefault();
+                                                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                                                setIsMenuOpen(false);
+                                            }} className="text-xl font-semibold hover:text-[#f53003] dark:hover:text-[#FF4433] transition-colors cursor-pointer px-2">Funkcje</a>
+
+                                            <a href="#how-it-works" onClick={(e) => {
+                                                e.preventDefault();
+                                                document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+                                                setIsMenuOpen(false);
+                                            }} className="text-xl font-semibold hover:text-[#f53003] dark:hover:text-[#FF4433] transition-colors cursor-pointer px-2">Jak to działa</a>
+
+                                            <a href="#industries" onClick={(e) => {
+                                                e.preventDefault();
+                                                document.getElementById('industries')?.scrollIntoView({ behavior: 'smooth' });
+                                                setIsMenuOpen(false);
+                                            }} className="text-xl font-semibold hover:text-[#f53003] dark:hover:text-[#FF4433] transition-colors cursor-pointer px-2">Branże</a>
+
+                                            <hr className="border-[#19140015] dark:border-[#3E3E3A]/50 mx-2" />
+
+                                            {!auth.user && (
+                                                <div className="flex flex-col gap-4 p-2">
+                                                    <Link
+                                                        href={login()}
+                                                        className="w-full text-center rounded-xl border border-[#19140015] py-4 text-lg font-medium hover:bg-black/5 dark:border-[#3E3E3A] dark:hover:bg-white/5 transition-colors"
+                                                    >
+                                                        Zaloguj się
+                                                    </Link>
+                                                    <Link
+                                                        href={register()}
+                                                        className="w-full text-center rounded-xl bg-[#f53003] py-4 text-white text-lg font-semibold hover:bg-[#f53003]/90 dark:bg-[#FF4433] dark:hover:bg-[#FF4433]/90 transition-all shadow-md"
+                                                    >
+                                                        Rozpocznij darmowy test
+                                                    </Link>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </SheetContent>
+                                </Sheet>
+                            </div>
+                        </div>
                     </div>
                 </header>
 
@@ -115,8 +186,7 @@ export default function Welcome() {
                                     </span>
                                 </h1>
                                 <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-[#706f6c] dark:text-[#A1A09A]">
-                                    Zlecenio to nowoczesna platforma FSM do zarządzania zleceniami w terenie.
-                                    Digitalizuj checklisty, zbieraj podpisy i generuj raporty oparte na AI w kilka sekund.
+                                    Zlecenio to prosta aplikacja dla Twojej ekipy. Zapomnij o papierowych protokołach – planuj pracę, wypełniaj checklisty i zbieraj podpisy na telefonie. Idealna dla serwisu, montażu, budowlanki i każdej firmy pracującej w terenie.
                                 </p>
                                 <div className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row">
                                     <Link
@@ -282,6 +352,12 @@ export default function Welcome() {
                                     { name: 'Zespoły Sprzątające', icon: Sparkles },
                                     { name: 'Ochrona i Alarmy', icon: ShieldCheck },
                                     { name: 'Architekci Krajobrazu', icon: Camera },
+                                    { name: 'Gazownicy', icon: Flame },
+                                    { name: 'Kominiarze', icon: Lock },
+                                    { name: 'Montaż mebli', icon: Hammer },
+                                    { name: 'Dekarze', icon: HardHat },
+                                    { name: 'Ogrody', icon: Camera },
+                                    { name: 'Serwis Bram', icon: Zap },
                                 ].map((industry) => (
                                     <div key={industry.name} className="flex flex-col items-center justify-center p-6 rounded-2xl bg-[#F8F8F8] dark:bg-[#161615] ring-1 ring-[#19140010] dark:ring-[#3E3E3A] hover:shadow-md transition-all group">
                                         <div className="mb-4 p-3 rounded-full bg-white dark:bg-[#0a0a0a] ring-1 ring-[#19140005] dark:ring-[#3E3E3A] group-hover:scale-110 transition-transform">

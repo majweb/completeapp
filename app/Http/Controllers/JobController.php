@@ -167,12 +167,17 @@ class JobController extends Controller
     {
         Gate::authorize('view', $job);
 
-        $job->load(['client', 'technician', 'template', 'checklist', 'auditLogs.user']);
+        $job->load(['client', 'technician', 'template', 'checklist.auditLogs.user', 'auditLogs.user']);
+
+        $allLogs = $job->auditLogs->concat($job->checklist ? $job->checklist->auditLogs : collect())
+            ->sortByDesc('created_at')
+            ->values();
 
         return Inertia::render('jobs/show', [
             'twilio_enabled' => config('services.twilio.enabled'),
             'is_ready_for_signature' => $job->isReadyForSignature(),
             'job' => array_merge($job->toArray(), [
+                'audit_logs' => $allLogs,
                 'media' => [
                     'images_before' => $job->getMedia('images_before')->map(fn ($m) => [
                         'id' => $m->id,
@@ -241,6 +246,14 @@ class JobController extends Controller
             $validated['status'] = 'completed';
         }
 
+        if ($request->has('status')) {
+            if ($request->status === 'new' && $job->status->value !== 'new') {
+                unset($validated['status']);
+            } elseif ($request->status === $job->status->value) {
+                unset($validated['status']);
+            }
+        }
+
         if ($request->has('checklist_content')) {
             $checklist_content = $request->checklist_content;
 
@@ -257,13 +270,30 @@ class JobController extends Controller
                 return back()->withErrors($errors);
             }
 
-            $job->checklist()->update(['content' => $checklist_content]);
+            $isCompleted = true;
+            foreach ($checklist_content as $item) {
+                $val = $item['value'] ?? null;
+                if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                    $isCompleted = false;
+                    break;
+                }
+            }
+
+            $job->checklist->update([
+                'content' => $checklist_content,
+                'is_completed' => $isCompleted
+            ]);
         }
 
         if ($request->has('status')) {
             if ($request->status === 'in_progress' && ! $job->started_at && ! isset($validated['started_at'])) {
                 $validated['started_at'] = now();
             }
+
+            if ($request->status === $job->status->value) {
+                unset($validated['status']);
+            }
+
             if ($request->status === 'completed') {
                 if (! $job->started_at && ! isset($validated['started_at'])) {
                     Inertia::flash('toast', ['type' => 'error', 'message' => 'Nie można zakończyć zlecenia, które nie zostało rozpoczęte.']);

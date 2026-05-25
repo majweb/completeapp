@@ -2,10 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Checklist extends Model
 {
+    use HasFactory, Auditable;
+
+    protected $auditEvents = ['updated', 'deleted'];
+
     protected $fillable = [
         'job_id',
         'content',

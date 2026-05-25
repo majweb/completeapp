@@ -36,6 +36,8 @@ interface ChecklistItem {
 
 interface AuditLog {
     id: number;
+    auditable_type: string;
+    auditable_id: number;
     event: string;
     old_values: any;
     new_values: any;
@@ -617,6 +619,10 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 return <span className="text-muted-foreground italic">brak</span>;
                                             }
 
+                                            if (key === 'is_completed') {
+                                                return value ? <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px] py-0 h-4">Uzupełniono</Badge> : <Badge variant="outline" className="text-[10px] py-0 h-4">W trakcie</Badge>;
+                                            }
+
                                             if (key === 'status') {
                                                 const statusLabelsMap: Record<string, string> = {
                                                     'new': 'Nowe',
@@ -642,10 +648,72 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 }
                                             }
 
+                                            if (typeof value === 'boolean') {
+                                                return value ? 'Tak' : 'Nie';
+                                            }
+
                                             return typeof value === 'object' ? JSON.stringify(value) : String(value);
                                         };
 
-                                        const getFieldLabel = (key: string) => {
+                                        const renderValueChange = (key: string, oldVal: any, newVal: any, auditableType?: string) => {
+                                            if (auditableType === 'App\\Models\\Checklist' && key === 'content') {
+                                                const oldContent = Array.isArray(oldVal) ? oldVal : [];
+                                                const newContent = Array.isArray(newVal) ? newVal : [];
+
+                                                const changes = newContent.filter((newItem: any) => {
+                                                    const oldItem = oldContent.find((i: any) => i.id === newItem.id);
+
+                                                    return !oldItem || JSON.stringify(oldItem.value) !== JSON.stringify(newItem.value);
+                                                });
+
+                                                if (changes.length === 0) {
+                                                    return null;
+                                                }
+
+                                                return (
+                                                    <div className="flex flex-col gap-1 w-full">
+                                                        {changes.map((item: any) => {
+                                                            const oldItem = oldContent.find((i: any) => i.id === item.id);
+
+                                                            return (
+                                                                <div key={item.id} className="flex items-center gap-1.5 flex-wrap bg-muted/20 p-1 rounded">
+                                                                    <span className="font-medium text-foreground">{item.label}:</span>
+                                                                    <span className="text-muted-foreground line-through opacity-70">
+                                                                        {formatValue('value', oldItem?.value)}
+                                                                    </span>
+                                                                    <LucideArrowRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                                                                    <span className="font-medium text-foreground">
+                                                                        {formatValue('value', item.value)}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            }
+
+                                            return (
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="text-muted-foreground line-through opacity-70">
+                                                        {formatValue(key, oldVal)}
+                                                    </span>
+                                                    <LucideArrowRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                                                    <span className="font-medium text-foreground">
+                                                        {formatValue(key, newVal)}
+                                                    </span>
+                                                </div>
+                                            );
+                                        };
+
+                                        const getFieldLabel = (key: string, auditableType?: string) => {
+                                            if (auditableType === 'App\\Models\\Checklist') {
+                                                if (key === 'is_completed') {
+                                                    return 'Status wymagań';
+                                                }
+
+                                                return 'Element checklisty';
+                                            }
+
                                             const fieldLabels: Record<string, string> = {
                                                 'status': 'Status',
                                                 'assigned_to': 'Technik',
@@ -665,7 +733,11 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 <div className="absolute -left-[9px] top-3 h-4 w-4 rounded-full border-2 border-background bg-muted group-hover:bg-primary/30 transition-colors" />
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
-                                                        {log.event === 'created' ? (
+                                                        {log.auditable_type === 'App\\Models\\Checklist' ? (
+                                                            <span className="text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                                                                <LucideCheckCircle2 className="h-3 w-3" /> Checklista
+                                                            </span>
+                                                        ) : log.event === 'created' ? (
                                                             <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
                                                                 <LucidePlusCircle className="h-3 w-3" /> Utworzono
                                                             </span>
@@ -689,22 +761,24 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 </div>
                                                 {log.event === 'updated' && log.new_values && (
                                                     <div className="mt-2 space-y-1.5 bg-background/50 p-2 rounded border border-muted/50">
-                                                        {Object.keys(log.new_values).map((key) => (
-                                                            <div key={key} className="text-[11px] flex flex-col sm:grid sm:grid-cols-[100px_1fr] gap-1 sm:gap-2 items-start sm:items-baseline">
-                                                                <span className="font-medium text-muted-foreground truncate w-full" title={getFieldLabel(key)}>
-                                                                    {getFieldLabel(key)}:
-                                                                </span>
-                                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                                    <span className="text-muted-foreground line-through opacity-70">
-                                                                        {formatValue(key, log.old_values?.[key])}
+                                                        {Object.keys(log.new_values).map((key) => {
+                                                            const changeContent = renderValueChange(key, log.old_values?.[key], log.new_values[key], log.auditable_type);
+
+                                                            if (changeContent === null) {
+                                                                return null;
+                                                            }
+
+                                                            return (
+                                                                <div key={key} className={`text-[11px] flex flex-col gap-1 items-start ${log.auditable_type === 'App\\Models\\Checklist' && key === 'content' ? 'mb-1' : 'sm:grid sm:grid-cols-[100px_1fr] sm:gap-2 sm:items-baseline'}`}>
+                                                                    <span className={`font-medium text-muted-foreground ${log.auditable_type === 'App\\Models\\Checklist' && key === 'content' ? 'text-[10px] uppercase tracking-wider' : 'truncate w-full'}`} title={getFieldLabel(key, log.auditable_type)}>
+                                                                        {getFieldLabel(key, log.auditable_type)}:
                                                                     </span>
-                                                                    <LucideArrowRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                                                                    <span className="font-medium text-foreground">
-                                                                        {formatValue(key, log.new_values[key])}
-                                                                    </span>
+                                                                    <div className="w-full">
+                                                                        {changeContent}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        ))}
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>

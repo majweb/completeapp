@@ -10,16 +10,31 @@ trait Auditable
     public static function bootAuditable()
     {
         static::created(function ($model) {
-            $model->audit('created');
+            if ($model->shouldAudit('created')) {
+                $model->audit('created');
+            }
         });
 
         static::updated(function ($model) {
-            $model->audit('updated');
+            if ($model->shouldAudit('updated')) {
+                $model->audit('updated');
+            }
         });
 
         static::deleted(function ($model) {
-            $model->audit('deleted');
+            if ($model->shouldAudit('deleted')) {
+                $model->audit('deleted');
+            }
         });
+    }
+
+    protected function shouldAudit($event)
+    {
+        if (property_exists($this, 'auditEvents')) {
+            return in_array($event, $this->auditEvents);
+        }
+
+        return true;
     }
 
     protected function audit($event)

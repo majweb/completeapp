@@ -254,36 +254,42 @@ class JobController extends Controller
             }
         }
 
-        if ($request->has('checklist_content')) {
-            $checklist_content = $request->checklist_content;
+            if ($request->has('checklist_content')) {
+                $checklist_content = $request->checklist_content;
 
-            // Walidacja pól wymaganych w checklist_content
-            $errors = [];
-            foreach ($checklist_content as $index => $item) {
-                $val = $item['value'] ?? null;
-                if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
-                    $errors["checklist_content.{$index}.value"] = 'To pole jest wymagane.';
+                // Walidacja pól wymaganych w checklist_content
+                $errors = [];
+                foreach ($checklist_content as $index => $item) {
+                    $val = $item['value'] ?? null;
+                    if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                        $errors["checklist_content.{$index}.value"] = 'To pole jest wymagane.';
+                    }
+                }
+
+                if (! empty($errors)) {
+                    return back()->withErrors($errors);
+                }
+
+                $isCompleted = count($checklist_content) > 0;
+                foreach ($checklist_content as $item) {
+                    $val = $item['value'] ?? null;
+                    if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                        $isCompleted = false;
+                        break;
+                    }
+                }
+
+                $currentContent = $job->checklist->content;
+                $currentIsCompleted = $job->checklist->is_completed;
+
+                // Tylko jeśli faktycznie coś się zmieniło w zawartości lub statusie skompletowania
+                if ($currentContent !== $checklist_content || (bool) $currentIsCompleted !== (bool) $isCompleted) {
+                    $job->checklist->update([
+                        'content' => $checklist_content,
+                        'is_completed' => $isCompleted,
+                    ]);
                 }
             }
-
-            if (! empty($errors)) {
-                return back()->withErrors($errors);
-            }
-
-            $isCompleted = true;
-            foreach ($checklist_content as $item) {
-                $val = $item['value'] ?? null;
-                if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
-                    $isCompleted = false;
-                    break;
-                }
-            }
-
-            $job->checklist->update([
-                'content' => $checklist_content,
-                'is_completed' => $isCompleted
-            ]);
-        }
 
         if ($request->has('status')) {
             if ($request->status === 'in_progress' && ! $job->started_at && ! isset($validated['started_at'])) {

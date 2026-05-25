@@ -127,6 +127,12 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     const [dragOverItem, setDragOverItem] = useState<number | null>(null);
     const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    const requiredFields = data.checklist_content.filter(i => i.required);
+    const completedRequired = requiredFields.filter(i => i.value !== null && i.value !== '' && i.value !== false);
+    const isFullyCompleted = requiredFields.length > 0 && completedRequired.length === requiredFields.length;
+    const hasUnsavedChanges = JSON.stringify(data.checklist_content) !== JSON.stringify(job.checklist?.content || []);
+
     const signatureRef = useRef<HTMLCanvasElement>(null);
     const signaturePadRef = useRef<SignaturePad | null>(null);
 
@@ -597,7 +603,9 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                     >
                                         <div className="flex flex-col gap-2">
                                             <div className="flex items-center justify-between mb-2">
-                                                <CardTitle className="text-base sm:text-lg m-0">Historia zmian ({job.audit_logs.length})</CardTitle>
+                                                <CardTitle className="text-base sm:text-lg m-0 flex items-center gap-2">
+                                                    Historia zmian ({job.audit_logs.length})
+                                                </CardTitle>
                                                 <div className="flex items-center gap-2">
                                                     <LucideFileText className="h-4 w-4 text-muted-foreground" />
                                                     {isHistoryExpanded ? (
@@ -655,8 +663,8 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             return typeof value === 'object' ? JSON.stringify(value) : String(value);
                                         };
 
-                                        const renderValueChange = (key: string, oldVal: any, newVal: any, auditableType?: string) => {
-                                            if (auditableType === 'App\\Models\\Checklist' && key === 'content') {
+                                        const renderValueChange = (key: string, oldVal: any, newVal: any, log: AuditLog) => {
+                                            if (log.auditable_type === 'App\\Models\\Checklist' && key === 'content') {
                                                 const oldContent = Array.isArray(oldVal) ? oldVal : [];
                                                 const newContent = Array.isArray(newVal) ? newVal : [];
 
@@ -666,12 +674,27 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                     return !oldItem || JSON.stringify(oldItem.value) !== JSON.stringify(newItem.value);
                                                 });
 
-                                                if (changes.length === 0) {
+                                                const isCompletedChanged = Object.prototype.hasOwnProperty.call(log.new_values, 'is_completed') &&
+                                                                           log.old_values?.is_completed !== log.new_values.is_completed;
+
+                                                if (changes.length === 0 && !isCompletedChanged) {
                                                     return null;
                                                 }
 
                                                 return (
                                                     <div className="flex flex-col gap-1 w-full">
+                                                        {isCompletedChanged && (
+                                                            <div className="flex items-center gap-1.5 flex-wrap bg-muted/20 p-1 rounded">
+                                                                <span className="font-medium text-foreground">Status wymagań:</span>
+                                                                <span className="text-muted-foreground line-through opacity-70">
+                                                                    {log.old_values?.is_completed ? 'Skompletowano' : 'W trakcie'}
+                                                                </span>
+                                                                <LucideArrowRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                                                                <span className="font-medium text-foreground">
+                                                                    {log.new_values.is_completed ? 'Skompletowano' : 'W trakcie'}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         {changes.map((item: any) => {
                                                             const oldItem = oldContent.find((i: any) => i.id === item.id);
 
@@ -728,6 +751,22 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             return fieldLabels[key] || key;
                                         };
 
+                                        const hasVisibleChanges = (log: AuditLog) => {
+                                            if (log.event !== 'updated' || !log.new_values) {
+                                                return true;
+                                            }
+
+                                            return Object.keys(log.new_values).some(key => {
+                                                const content = renderValueChange(key, log.old_values?.[key], log.new_values[key], log);
+
+                                                return content !== null;
+                                            });
+                                        };
+
+                                        if (!hasVisibleChanges(log)) {
+                                            return null;
+                                        }
+
                                         return (
                                             <div key={log.id} className="text-sm border-l-2 border-muted pl-4 py-2 relative group hover:bg-muted/30 transition-colors rounded-r-md">
                                                 <div className="absolute -left-[9px] top-3 h-4 w-4 rounded-full border-2 border-background bg-muted group-hover:bg-primary/30 transition-colors" />
@@ -762,17 +801,35 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 {log.event === 'updated' && log.new_values && (
                                                     <div className="mt-2 space-y-1.5 bg-background/50 p-2 rounded border border-muted/50">
                                                         {Object.keys(log.new_values).map((key) => {
-                                                            const changeContent = renderValueChange(key, log.old_values?.[key], log.new_values[key], log.auditable_type);
+                                                            const changeContent = renderValueChange(key, log.old_values?.[key], log.new_values[key], log);
 
-                                                            if (changeContent === null) {
+                                                            if (changeContent === null || (log.auditable_type === 'App\\Models\\Checklist' && key === 'is_completed')) {
                                                                 return null;
                                                             }
 
+                                                            const isChecklistContent = log.auditable_type === 'App\\Models\\Checklist' && key === 'content';
+                                                            let changesCountBadge = null;
+
+                                                            if (isChecklistContent) {
+                                                                const checklistLogsCount = job.audit_logs.filter(l => l.auditable_type === 'App\\Models\\Checklist').length;
+
+                                                                if (checklistLogsCount > 0) {
+                                                                    changesCountBadge = (
+                                                                        <Badge variant="secondary" className="text-[10px] py-0 h-5 font-normal">
+                                                                            Checklista: {checklistLogsCount}
+                                                                        </Badge>
+                                                                    );
+                                                                }
+                                                            }
+
                                                             return (
-                                                                <div key={key} className={`text-[11px] flex flex-col gap-1 items-start ${log.auditable_type === 'App\\Models\\Checklist' && key === 'content' ? 'mb-1' : 'sm:grid sm:grid-cols-[100px_1fr] sm:gap-2 sm:items-baseline'}`}>
-                                                                    <span className={`font-medium text-muted-foreground ${log.auditable_type === 'App\\Models\\Checklist' && key === 'content' ? 'text-[10px] uppercase tracking-wider' : 'truncate w-full'}`} title={getFieldLabel(key, log.auditable_type)}>
-                                                                        {getFieldLabel(key, log.auditable_type)}:
-                                                                    </span>
+                                                                <div key={key} className={`text-[11px] flex flex-col gap-1 items-start ${isChecklistContent ? 'mb-1' : 'sm:grid sm:grid-cols-[100px_1fr] sm:gap-2 sm:items-baseline'}`}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`font-medium text-muted-foreground ${isChecklistContent ? 'text-[10px] uppercase tracking-wider' : 'truncate w-full'}`} title={getFieldLabel(key, log.auditable_type)}>
+                                                                            {getFieldLabel(key, log.auditable_type)}:
+                                                                        </span>
+                                                                        {changesCountBadge}
+                                                                    </div>
                                                                     <div className="w-full">
                                                                         {changeContent}
                                                                     </div>
@@ -797,16 +854,59 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                         {/* Checklist Section */}
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 px-4 sm:px-6">
-                                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                                    <LucideCheckCircle2 className="h-5 w-5 text-primary" />
-                                    Checklista
-                                </CardTitle>
-                                <Button size="sm" variant="outline" onClick={saveChecklist} disabled={processing || !job.started_at} className="h-8 px-2 sm:px-3 cursor-pointer">
-                                    <LucideSave className="mr-1 sm:mr-2 h-4 w-4" />
+                                <div className="flex flex-col gap-1">
+                                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                                        <LucideCheckCircle2 className="h-5 w-5 text-primary" />
+                                        Checklista
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        {requiredFields.length > 0 && (
+                                            <Badge variant={isFullyCompleted ? "default" : "secondary"} className="text-[10px] py-0 h-5">
+                                                {isFullyCompleted ? "Skompletowano" : `Wypełniono ${completedRequired.length} z ${requiredFields.length}`}
+                                            </Badge>
+                                        )}
+                                        {hasUnsavedChanges && (
+                                            <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium animate-pulse">
+                                                <LucideRefreshCcw className="h-3 w-3" />
+                                                Niezapisane zmiany
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant={hasUnsavedChanges ? "default" : "outline"}
+                                    onClick={saveChecklist}
+                                    disabled={processing || !job.started_at}
+                                    className={`h-8 px-2 sm:px-3 cursor-pointer transition-all duration-300 ${hasUnsavedChanges ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                                >
+                                    {processing ? (
+                                        <LucideLoader2 className="mr-1 sm:mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <LucideSave className={`mr-1 sm:mr-2 h-4 w-4 ${hasUnsavedChanges ? 'animate-bounce' : ''}`} />
+                                    )}
                                     <span className="text-xs sm:text-sm">Zapisz</span>
+                                    {hasUnsavedChanges && <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                                    </span>}
                                 </Button>
                             </CardHeader>
-                            <CardContent className="space-y-6 relative">
+                            <CardContent className="space-y-6 relative pt-4">
+                                {requiredFields.length > 0 && (
+                                    <div className="px-1 sm:px-0">
+                                        <div className="flex justify-between items-end mb-1">
+                                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Postęp wymagań</span>
+                                            <span className="text-[10px] font-bold text-primary">{Math.round((completedRequired.length / requiredFields.length) * 100)}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-primary transition-all duration-500 ease-out"
+                                                style={{ width: `${(completedRequired.length / requiredFields.length) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                                 {!job.started_at && (
                                     <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
                                         <div className="bg-card border shadow-sm p-4 rounded-lg text-center max-w-xs mx-4">
@@ -831,18 +931,18 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                             checked={!!item.value}
                                                             onCheckedChange={(checked) => job.started_at && updateChecklist(index, !!checked)}
                                                             aria-invalid={!!(errors as any)[`checklist_content.${index}.value`]}
-                                                            className="h-5 w-5 sm:h-4 sm:w-4"
+                                                            className={`h-5 w-5 sm:h-4 sm:w-4 transition-transform ${item.value ? 'scale-110' : 'scale-100'}`}
                                                             disabled={!job.started_at}
                                                         />
                                                         <div className="flex flex-1 items-center justify-between">
                                                             <Label
                                                                 htmlFor={item.id}
-                                                                className={`text-sm sm:text-base font-medium leading-none ${!job.started_at ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                                                className={`text-sm sm:text-base font-medium leading-none ${!job.started_at ? 'cursor-not-allowed' : 'cursor-pointer'} ${item.value ? 'text-muted-foreground line-through decoration-primary/30' : ''}`}
                                                             >
                                                                 {item.label}
                                                                 {item.required && <span className="text-red-500 ml-1">*</span>}
                                                             </Label>
-                                                            {!!item.value && <LucideCheck className="h-5 w-5 text-green-600" />}
+                                                            {!!item.value && <LucideCheck className="h-4 w-4 text-primary animate-in zoom-in duration-300" />}
                                                         </div>
                                                     </div>
                                                     { (errors as any)[`checklist_content.${index}.value`] && (

@@ -95,7 +95,7 @@ export default function Welcome() {
                                     <span className="hidden sm:inline">Panel główny</span>
                                 </Link>
                             ) : (
-                                <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="hidden md:flex items-center gap-2 sm:gap-3">
                                     <Link
                                         href={login()}
                                         className="rounded-full border border-[#19140015] px-4 py-2 hover:bg-black/5 dark:border-[#3E3E3A] dark:hover:bg-white/5 text-xs sm:text-sm"

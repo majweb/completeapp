@@ -9,7 +9,7 @@
         .company-logo { float: right; max-height: 80px; max-width: 200px; }
         .company-name { font-size: 20px; font-weight: bold; color: {{ $job->company->primary_color ?? '#1e40af' }}; }
         .report-title { font-size: 18px; margin-top: 10px; }
-        .section { margin-bottom: 30px; clear: both; page-break-inside: auto; }
+        .section { margin-bottom: 30px; clear: both; }
         .section-header { page-break-after: avoid; margin-bottom: 10px; }
         .section-title { font-size: 14px; font-weight: bold; background: #f3f4f6; padding: 5px; border-left: 4px solid {{ $job->company->primary_color ?? '#3b82f6' }}; width: 100%; display: block; }
         .grid { width: 100%; border-collapse: collapse; }
@@ -20,8 +20,8 @@
         .checkbox { display: inline-block; width: 12px; height: 12px; border: 1px solid #333; margin-right: 5px; text-align: center; line-height: 10px; }
         .checked { background: {{ $job->company->primary_color ?? '#3b82f6' }}; color: white; border-color: {{ $job->company->primary_color ?? '#3b82f6' }}; }
         .photo-grid { margin-top: 10px; width: 100%; }
-        .photo { width: 30%; margin: 1%; margin-bottom: 10px; display: inline-block; border: 1px solid #ddd; padding: 2px; page-break-inside: avoid; vertical-align: top; }
-        .photo img { width: 100%; height: 160px; object-fit: cover; background: #f9fafb; }
+        .photo { width: 45%; margin: 1.5%; margin-bottom: 10px; display: inline-block; border: 1px solid #ddd; padding: 2px; page-break-inside: avoid; vertical-align: top; }
+        .photo img { width: 100%; height: 220px; object-fit: cover; background: #f9fafb; }
         .clear { clear: both; }
         .signature-box { margin-top: 30px; text-align: right; }
         .signature-image { max-width: 200px; border-bottom: 1px solid #333; }
@@ -78,11 +78,11 @@
         </table>
     </div>
 
-    <div class="section">
+    <div class="section" style="page-break-inside: avoid;">
         <div class="section-header">
             <div class="section-title">CHECKLISTA</div>
         </div>
-        <div style="page-break-before: avoid;">
+        <div>
             @foreach($job->checklist->content as $item)
                 <div class="checklist-item">
                     @if($item['type'] === 'checkbox')
@@ -102,20 +102,20 @@
     </div>
 
     @if($job->report_summary)
-    <div class="section">
+    <div class="section" style="page-break-inside: avoid;">
         <div class="section-header">
             <div class="section-title">PODSUMOWANIE RAPORTU</div>
         </div>
-        <div style="white-space: pre-wrap; word-wrap: break-word; page-break-before: avoid;">{{ $job->report_summary }}</div>
+        <div style="white-space: pre-wrap; word-wrap: break-word;">{{ $job->report_summary }}</div>
     </div>
     @endif
 
     @if($job->getMedia('images_before')->count() > 0)
-    <div class="section">
+    <div class="section" style="page-break-inside: avoid;">
         <div class="section-header">
             <div class="section-title">ZDJĘCIA PRZED PRACĄ</div>
         </div>
-        <div class="photo-grid" style="page-break-before: avoid;">
+        <div class="photo-grid">
             @foreach($job->getMedia('images_before') as $media)
                 <div class="photo">
                     <img src="data:image/png;base64,{{ base64_encode(file_get_contents($media->getPath('large'))) }}">
@@ -127,11 +127,11 @@
     @endif
 
     @if($job->getMedia('images_after')->count() > 0)
-    <div class="section">
+    <div class="section" style="page-break-inside: avoid;">
         <div class="section-header">
             <div class="section-title">ZDJĘCIA PO PRACY</div>
         </div>
-        <div class="photo-grid" style="page-break-before: avoid;">
+        <div class="photo-grid">
             @foreach($job->getMedia('images_after') as $media)
                 <div class="photo">
                     <img src="data:image/png;base64,{{ base64_encode(file_get_contents($media->getPath('large'))) }}">
@@ -144,12 +144,20 @@
 
     <div class="signature-box" style="page-break-inside: avoid;">
         <div class="label">PODPIS KLIENTA</div>
+        <div style="font-size: 8px; color: #6b7280; margin-bottom: 5px; font-style: italic;">
+            Potwierdzam wykonanie prac zgodnie ze zleceniem i bez zastrzeżeń.
+        </div>
         @if($job->getFirstMedia('signature'))
             <img src="data:image/png;base64,{{ base64_encode(file_get_contents($job->getFirstMedia('signature')->getPath())) }}" class="signature-image">
+            @if($job->completed_at)
+                <div style="font-size: 9px; color: #6b7280; margin-top: 2px;">
+                    Data i godzina złożenia podpisu: {{ $job->completed_at->format('d.m.Y H:i') }}
+                </div>
+            @endif
         @else
             <div style="height: 60px; border-bottom: 1px dashed #ccc; width: 200px; display: inline-block;"></div>
         @endif
-        <div style="font-size: 10px; margin-top: 5px;">{{ $job->client->name }}</div>
+        <div style="font-size: 10px; margin-top: 5px; font-weight: bold;">{{ $job->client->name }}</div>
     </div>
 
     <div class="footer">

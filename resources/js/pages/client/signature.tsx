@@ -61,6 +61,7 @@ export default function Signature({ job, media }: Props) {
     const [isChecklistOpen, setIsChecklistOpen] = useState(true);
     const [isBeforePhotosOpen, setIsBeforePhotosOpen] = useState(true);
     const [isAfterPhotosOpen, setIsAfterPhotosOpen] = useState(true);
+    const [isDeclarationAccepted, setIsDeclarationAccepted] = useState(false);
 
     const { data, setData, post, processing } = useForm({
         signature: '',
@@ -320,12 +321,25 @@ export default function Signature({ job, media }: Props) {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4 pb-4 md:pb-6">
-                                <p className="text-xs md:text-sm text-slate-600 leading-relaxed">
-                                    Potwierdzam wykonanie powyższych prac zgodnie ze zleceniem. Podpisując się, akceptuję raport końcowy.
-                                </p>
-                                <p className="text-[10px] md:text-xs text-slate-600 italic leading-tight border-l-2 border-slate-200 pl-3">
-                                    Podpis ma charakter informacyjny i stanowi jedynie potwierdzenie fizycznego wykonania prac serwisowych oraz zapoznania się z raportem. Nie stanowi on wiążącego oświadczenia woli w rozumieniu przepisów prawa cywilnego.
-                                </p>
+                                <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 space-y-3">
+                                    <p className="text-sm font-medium text-slate-900 leading-tight">
+                                        Podpisując niniejszy raport, oświadczam, że prace zostały wykonane zgodnie ze zleceniem, w pełnym zakresie i bez zastrzeżeń. Niniejszym dokonuję odbioru prac i potwierdzam ich zgodność ze stanem faktycznym.
+                                    </p>
+                                    <div className="flex items-start gap-3 pt-2 border-t border-blue-100">
+                                        <div className="flex items-center h-5">
+                                            <input
+                                                id="declaration-checkbox"
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                checked={isDeclarationAccepted}
+                                                onChange={(e) => setIsDeclarationAccepted(e.target.checked)}
+                                            />
+                                        </div>
+                                        <label htmlFor="declaration-checkbox" className="text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                                            Akceptuję wykonane prace i oświadczam, że nie wnoszę do nich zastrzeżeń.
+                                        </label>
+                                    </div>
+                                </div>
 
                                 <div className="border rounded-lg bg-white overflow-hidden shadow-inner">
                                     <canvas
@@ -338,19 +352,23 @@ export default function Signature({ job, media }: Props) {
                                     <Button
                                         variant="outline"
                                         onClick={handleClear}
-                                        type="button"
                                         disabled={isSignatureEmpty || processing}
-                                        className="w-full sm:w-auto h-11 md:h-10"
+                                        className="w-full sm:w-auto h-11 md:h-10 cursor-pointer"
                                     >
                                         Wyczyść
                                     </Button>
 
                                     <Button
-                                        className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 h-11 md:h-10 text-base md:text-sm"
+                                        className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 h-11 md:h-10 text-base md:text-sm cursor-pointer"
                                         onClick={handleSubmit}
-                                        disabled={isSignatureEmpty || processing}
+                                        disabled={isSignatureEmpty || processing || !isDeclarationAccepted}
                                     >
-                                        {processing ? 'Zapisywanie...' : 'Złóż podpis i zakończ'}
+                                        {processing ? (
+                                            <>
+                                                <LucideSave className="mr-2 h-4 w-4 animate-spin" />
+                                                Zapisywanie...
+                                            </>
+                                        ) : 'Złóż podpis i zakończ'}
                                     </Button>
                                 </div>
                             </CardContent>

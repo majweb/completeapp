@@ -113,6 +113,8 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     });
 
     const [isSignatureOpen, setIsSignatureOpen] = useState(false);
+    const [isSignatureSaving, setIsSignatureSaving] = useState(false);
+    const [isDeclarationAccepted, setIsDeclarationAccepted] = useState(false);
     const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
     const [mediaToDelete, setMediaToDelete] = useState<number | null>(null);
     const [dragOver, setDragOver] = useState<string | null>(null);
@@ -376,6 +378,8 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
 
         const signature = signaturePadRef.current?.toDataURL();
 
+        setIsSignatureSaving(true);
+
         // Use router.post for media but manually sync errors if needed,
         // or rely on finishJob to trigger backend validation
         router.post(saveSignature(job.id).url, { signature }, {
@@ -388,6 +392,9 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
             onError: (errs) => {
                 // Manually sync errors from router to useForm if needed
                 Object.assign(errors, errs);
+            },
+            onFinish: () => {
+                setIsSignatureSaving(false);
             }
         });
     };
@@ -1127,13 +1134,42 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                     <div className="bg-white border rounded-lg overflow-hidden">
                                                         <canvas ref={signatureRef} className="w-full h-80 touch-none cursor-crosshair" />
                                                     </div>
-                                                    <div className="flex justify-between gap-2 mt-4">
-                                                        <Button variant="outline" onClick={() => signaturePadRef.current?.clear()} className="cursor-pointer">Wyczyść</Button>
-                                                        <Button onClick={handleSaveSignature} className="cursor-pointer">Zapisz podpis</Button>
+
+                                                    <div className="bg-muted/50 p-4 rounded-lg border border-primary/20 space-y-3 mt-4">
+                                                        <p className="text-sm font-medium text-foreground leading-tight">
+                                                            Podpisując niniejszy raport, oświadczam, że prace zostały wykonane zgodnie ze zleceniem, w pełnym zakresie i bez zastrzeżeń. Niniejszym dokonuję odbioru prac i potwierdzam ich zgodność ze stanem faktycznym.
+                                                        </p>
+                                                        <div className="flex items-start gap-3 pt-2 border-t border-primary/10">
+                                                            <div className="flex items-center h-5">
+                                                                <input
+                                                                    id="declaration-checkbox"
+                                                                    type="checkbox"
+                                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                                    checked={isDeclarationAccepted}
+                                                                    onChange={(e) => setIsDeclarationAccepted(e.target.checked)}
+                                                                />
+                                                            </div>
+                                                            <label htmlFor="declaration-checkbox" className="text-xs font-semibold text-foreground cursor-pointer select-none">
+                                                                Akceptuję wykonane prace i oświadczam, że nie wnoszę do nich zastrzeżeń.
+                                                            </label>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-sm font-medium text-foreground leading-tight text-center px-4 mt-4 bg-muted/50 p-3 rounded-lg border border-primary/20">
-                                                        Podpis ma charakter informacyjny i stanowi jedynie potwierdzenie fizycznego wykonania prac. Nie stanowi on wiążącego oświadczenia woli.
-                                                    </p>
+
+                                                    <div className="flex justify-between gap-2 mt-4">
+                                                        <Button variant="outline" onClick={() => signaturePadRef.current?.clear()} className="cursor-pointer" disabled={isSignatureSaving}>Wyczyść</Button>
+                                                        <Button
+                                                            onClick={handleSaveSignature}
+                                                            className="cursor-pointer"
+                                                            disabled={!isDeclarationAccepted || isSignatureSaving}
+                                                        >
+                                                            {isSignatureSaving ? (
+                                                                <>
+                                                                    <LucideLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                    Zapisywanie...
+                                                                </>
+                                                            ) : 'Zapisz podpis'}
+                                                        </Button>
+                                                    </div>
                                                 </DialogContent>
                                             </Dialog>
 
@@ -1152,7 +1188,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                 </p>
                                             )}
                                             <p className="text-xs font-medium text-foreground leading-tight text-center px-3 mt-3 bg-muted/30 p-2 rounded-md border border-primary/10">
-                                                Podpis ma charakter informacyjny i stanowi jedynie potwierdzenie fizycznego wykonania prac. Nie stanowi on wiążącego oświadczenia woli.
+                                                Podpis stanowi oświadczenie woli o odbiorze przedmiotu zlecenia bez zastrzeżeń.
                                             </p>
                                         </div>
                                     )}

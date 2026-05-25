@@ -3,22 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Enums\JobStatus;
-use App\Models\Job;
-use App\Models\JobTemplate;
-use App\Services\SubscriptionService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Mail\JobReportMail;
 use App\Mail\RequestSignatureMail;
-use Illuminate\Support\Facades\URL;
+use App\Models\Job;
+use App\Models\JobTemplate;
+use App\Services\AIService;
+use App\Services\SMSService;
+use App\Services\SubscriptionService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Barryvdh\DomPDF\Facade\Pdf;
-
-use App\Services\AIService;
 
 class JobController extends Controller
 {
@@ -49,7 +49,7 @@ class JobController extends Controller
         if ($job->checklist) {
             foreach ($job->checklist->content as $item) {
                 $val = $item['value'] ?? null;
-                if (!empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
                     return back()->with('error', 'Nie można wygenerować raportu. Checklista nie jest kompletna.');
                 }
             }
@@ -59,6 +59,7 @@ class JobController extends Controller
 
         return $pdf->stream("raport_zlecenie_{$job->id}.pdf");
     }
+
     public function index(Request $request)
     {
         Gate::authorize('viewAny', Job::class);
@@ -71,7 +72,7 @@ class JobController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('id', 'like', "%{$search}%")
-                  ->orWhereRelation('client', 'name', 'like', "%{$search}%");
+                    ->orWhereRelation('client', 'name', 'like', "%{$search}%");
             });
         }
 
@@ -132,6 +133,7 @@ class JobController extends Controller
                 'type' => 'error',
                 'message' => 'Osiągnięto limit zleceń na ten miesiąc dla Twojego planu.',
             ]);
+
             return redirect()->back();
         }
 
@@ -246,12 +248,12 @@ class JobController extends Controller
             $errors = [];
             foreach ($checklist_content as $index => $item) {
                 $val = $item['value'] ?? null;
-                if (!empty($item['required']) && ($val === null || $val === '' || $val === false)) {
-                    $errors["checklist_content.{$index}.value"] = "To pole jest wymagane.";
+                if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                    $errors["checklist_content.{$index}.value"] = 'To pole jest wymagane.';
                 }
             }
 
-            if (!empty($errors)) {
+            if (! empty($errors)) {
                 return back()->withErrors($errors);
             }
 
@@ -259,12 +261,13 @@ class JobController extends Controller
         }
 
         if ($request->has('status')) {
-            if ($request->status === 'in_progress' && !$job->started_at && !isset($validated['started_at'])) {
+            if ($request->status === 'in_progress' && ! $job->started_at && ! isset($validated['started_at'])) {
                 $validated['started_at'] = now();
             }
             if ($request->status === 'completed') {
-                if (!$job->started_at && !isset($validated['started_at'])) {
+                if (! $job->started_at && ! isset($validated['started_at'])) {
                     Inertia::flash('toast', ['type' => 'error', 'message' => 'Nie można zakończyć zlecenia, które nie zostało rozpoczęte.']);
+
                     return back();
                 }
 
@@ -279,18 +282,19 @@ class JobController extends Controller
                     $workflowErrors['media.images_after'] = 'Wymagane jest co najmniej jedno zdjęcie PO.';
                 }
 
-                if ($template->require_signature && !$job->hasMedia('signature')) {
+                if ($template->require_signature && ! $job->hasMedia('signature')) {
                     $workflowErrors['media.signature'] = 'Wymagany jest podpis klienta.';
                 }
 
-                if (!empty($workflowErrors)) {
+                if (! empty($workflowErrors)) {
                     if ($request->header('X-Inertia')) {
                         return back()->withErrors($workflowErrors);
                     }
+
                     return response()->json(['errors' => $workflowErrors], 422);
                 }
 
-                if (!$job->completed_at && !isset($validated['completed_at'])) {
+                if (! $job->completed_at && ! isset($validated['completed_at'])) {
                     $validated['completed_at'] = now();
                 }
             }
@@ -301,7 +305,7 @@ class JobController extends Controller
         $job->update($validated);
 
         if ($wasCompleted && $request->boolean('send_sms') && $job->client->phone) {
-            app(\App\Services\SMSService::class)->send(
+            app(SMSService::class)->send(
                 $job->client->phone,
                 "Twoje zlecenie #{$job->id} zostało zakończone. Dziękujemy!"
             );
@@ -372,14 +376,15 @@ class JobController extends Controller
         if ($job->checklist) {
             foreach ($job->checklist->content as $item) {
                 $val = $item['value'] ?? null;
-                if (!empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
                     return back()->with('error', 'Nie można wysłać raportu. Checklista nie jest kompletna.');
                 }
             }
         }
 
-        if (!$job->client->email) {
+        if (! $job->client->email) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Klient nie posiada adresu email.']);
+
             return back();
         }
 
@@ -395,7 +400,7 @@ class JobController extends Controller
             Mail::to($job->client->email)->send(new JobReportMail($job, $fullPath));
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Raport został wysłany do klienta.']);
         } catch (\Exception $e) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Błąd podczas wysyłki: ' . $e->getMessage()]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Błąd podczas wysyłki: '.$e->getMessage()]);
         } finally {
             Storage::disk('local')->delete($filePath);
         }
@@ -415,6 +420,11 @@ class JobController extends Controller
             ->usingFileName("signature_{$job->id}.png")
             ->toMediaCollection('signature');
 
+        $job->update([
+            'completed_at' => now(),
+            'status' => JobStatus::COMPLETED,
+        ]);
+
         return back();
     }
 
@@ -422,16 +432,18 @@ class JobController extends Controller
     {
         Gate::authorize('update', $job);
 
-        if (!$job->isReadyForSignature()) {
+        if (! $job->isReadyForSignature()) {
             Inertia::flash('toast', [
                 'type' => 'error',
-                'message' => 'Zlecenie nie jest gotowe do podpisu. Uzupełnij checklistę i wymagane zdjęcia.'
+                'message' => 'Zlecenie nie jest gotowe do podpisu. Uzupełnij checklistę i wymagane zdjęcia.',
             ]);
+
             return back();
         }
 
-        if (!$job->client->email) {
+        if (! $job->client->email) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Klient nie posiada adresu email.']);
+
             return back();
         }
 
@@ -445,7 +457,7 @@ class JobController extends Controller
             Mail::to($job->client->email)->send(new RequestSignatureMail($job, $url));
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Prośba o podpis została wysłana do klienta.']);
         } catch (\Exception $e) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Błąd podczas wysyłki: ' . $e->getMessage()]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Błąd podczas wysyłki: '.$e->getMessage()]);
         }
 
         return back();

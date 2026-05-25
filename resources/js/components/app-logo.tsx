@@ -12,7 +12,7 @@ export default function AppLogo() {
                 {company?.logo_url ? (
                     <img src={company.logo_url} alt={company.name} className="size-full object-cover" />
                 ) : (
-                    <AppLogoIcon className="size-5 fill-current text-white dark:text-black" />
+                    <AppLogoIcon className="size-5" />
                 )}
             </div>
             <div className="ml-1 grid flex-1 text-left text-sm">

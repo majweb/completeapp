@@ -29,13 +29,10 @@
                 background-color: oklch(0.145 0 0);
             }
         </style>
-
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" href="/logo-icon-croped.png" />
+        <link rel="apple-touch-icon" href="/logo-icon-croped.png" />
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#FD8031">
-
         @fonts
 
         @viteReactRefresh

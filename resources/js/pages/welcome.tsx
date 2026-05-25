@@ -13,7 +13,6 @@ import {
     Zap
 } from 'lucide-react';
 
-import AppLogoIcon from '@/components/app-logo-icon';
 import { Button } from '@/components/ui/button';
 import { usePwaInstall } from '@/hooks/use-pwa-install';
 import { dashboard, login, register } from '@/routes';
@@ -48,8 +47,7 @@ export default function Welcome() {
                 <header className="sticky top-0 z-50 border-b border-[#19140015] bg-[#FDFDFC]/80 backdrop-blur-md dark:border-[#3E3E3A]/50 dark:bg-[#0a0a0a]/80">
                     <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
                         <div className="flex items-center gap-2">
-                            <AppLogoIcon className="h-8 w-8 fill-current text-[#f53003] dark:text-[#FF4433]" />
-                            <span className="text-xl font-bold tracking-tight">Zlecenio</span>
+                            <img src="/logo-full-croped.png" alt="Zlecenio" className="h-8 w-auto" />
                         </div>
                         <nav className="flex items-center gap-4 lg:gap-8 text-sm font-medium">
                             <a href="#features" onClick={(e) => {
@@ -366,8 +364,7 @@ export default function Welcome() {
                 <footer className="py-12 px-6 border-t border-[#19140005] dark:border-[#3E3E3A]/50 bg-[#FDFDFC] dark:bg-[#0a0a0a]">
                     <div className="mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex items-center gap-2 opacity-50">
-                            <AppLogoIcon className="h-5 w-5 fill-current" />
-                            <span className="text-sm font-bold tracking-tight">Zlecenio</span>
+                            <img src="/logo-full-croped.png" alt="Zlecenio" className="h-5 w-auto" />
                         </div>
                         <p className="text-xs text-[#706f6c] dark:text-[#A1A09A]">
                             © 2026 Zlecenio. System klasy FSM napędzany przez AI. Wszystkie prawa zastrzeżone.

@@ -10,11 +10,17 @@ use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\JobTemplateController;
 use App\Http\Controllers\ClientSignatureController;
 use App\Http\Controllers\PublicJobController;
+use App\Http\Controllers\Auth\GoogleController;
 use Illuminate\Support\Facades\Route;
+use App\Mail\TestMail;
+use Illuminate\Support\Facades\Mail;
 
 Route::inertia('/', 'welcome')->name('home');
 Route::inertia('/terms', 'terms')->name('terms');
 Route::inertia('/privacy', 'privacy')->name('privacy');
+
+Route::get('auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
+Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware([App\Http\Middleware\RedirectAdminToDashboard::class])->group(function () {
@@ -69,5 +75,10 @@ Route::get('public/jobs/{job}/signature', [ClientSignatureController::class, 'sh
 Route::post('public/jobs/{job}/signature', [ClientSignatureController::class, 'store'])->name('client.signature.store');
 
 Route::get('view/job/{job:uuid}', [PublicJobController::class, 'show'])->name('public.job.show');
+
+Route::get('test-mail', function () {
+//    Mail::to('marcin.five@gmail.com')->send(new TestMail());
+//    return 'Mail wysłany!';
+})->name('test-mail');
 
 require __DIR__.'/settings.php';

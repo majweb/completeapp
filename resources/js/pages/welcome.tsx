@@ -65,24 +65,37 @@ export default function Welcome() {
                 {/* Header/Navbar */}
                 <header className="sticky top-0 z-50 border-b border-[#19140015] bg-[#FDFDFC]/80 backdrop-blur-md dark:border-[#3E3E3A]/50 dark:bg-[#0a0a0a]/80">
                     <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => {
+                            if (typeof window !== 'undefined') {
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        }}>
                             <img src="/logo-full-croped.png" alt="Zlecenio" className="h-8 w-auto" />
                         </div>
                         <div className="flex items-center gap-4 lg:gap-8 text-sm font-medium">
                             <nav className="hidden items-center gap-4 lg:gap-8 md:flex">
                                 <a href="#features" onClick={(e) => {
                                     e.preventDefault();
-                                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+
+                                    if (typeof window !== 'undefined') {
+                                        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                                    }
                                 }} className="hover:text-[#f53003] dark:hover:text-[#FF4433] cursor-pointer">Funkcje</a>
 
                                 <a href="#how-it-works" onClick={(e) => {
                                     e.preventDefault();
-                                    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+
+                                    if (typeof window !== 'undefined') {
+                                        document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+                                    }
                                 }} className="hover:text-[#f53003] dark:hover:text-[#FF4433] cursor-pointer">Jak to działa</a>
 
                                 <a href="#industries" onClick={(e) => {
                                     e.preventDefault();
-                                    document.getElementById('industries')?.scrollIntoView({ behavior: 'smooth' });
+
+                                    if (typeof window !== 'undefined') {
+                                        document.getElementById('industries')?.scrollIntoView({ behavior: 'smooth' });
+                                    }
                                 }} className="hover:text-[#f53003] dark:hover:text-[#FF4433] cursor-pointer">Branże</a>
                             </nav>
 

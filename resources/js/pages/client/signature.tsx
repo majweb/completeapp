@@ -111,7 +111,8 @@ export default function Signature({ job, media }: Props) {
             setData('signature', signatureData);
 
             // Re-post with the data
-            post(window.location.href, {
+            const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+            post(currentUrl, {
                 onBefore: () => {
                     // Manual data assignment because useForm's setData is async
                     data.signature = signatureData;

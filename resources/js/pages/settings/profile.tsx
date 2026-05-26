@@ -1,5 +1,6 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head, usePage, router } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
+import { LucideCheckCircle, LucideAlertCircle } from 'lucide-react';
 import React from 'react';
 
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
@@ -9,6 +10,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import auth_routes from '@/routes/auth';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { PageProps } from '@/types';
@@ -117,6 +119,52 @@ export default function Profile({
                         </>
                     )}
                 </Form>
+
+                <div className="pt-6 border-t">
+                    <Heading
+                        variant="small"
+                        title="Konto Google"
+                        description="Zarządzaj powiązaniem swojego konta z Google"
+                    />
+
+                    <div className="mt-4">
+                        {auth.user.google_id ? (
+                            <div className="flex items-center gap-2 text-sm text-green-600">
+                                <LucideCheckCircle className="h-4 w-4" />
+                                <span>Twoje konto jest powiązane z Google.</span>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <LucideAlertCircle className="h-4 w-4" />
+                                    <span>Twoje konto nie jest powiązane z Google.</span>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    type="button"
+                                    onClick={() => router.visit(auth_routes.google().url)}
+                                >
+                                    <svg
+                                        className="mr-2 h-4 w-4"
+                                        aria-hidden="true"
+                                        focusable="false"
+                                        data-prefix="fab"
+                                        data-icon="google"
+                                        role="img"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 488 512"
+                                    >
+                                        <path
+                                            fill="currentColor"
+                                            d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
+                                        ></path>
+                                    </svg>
+                                    Połącz z Google
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <DeleteUser />

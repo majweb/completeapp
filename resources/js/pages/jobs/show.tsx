@@ -422,7 +422,8 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     };
 
     const handleCopyPublicLink = () => {
-        const url = window.location.origin + '/view/job/' + job.uuid;
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const url = origin + '/view/job/' + job.uuid;
         navigator.clipboard.writeText(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

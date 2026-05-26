@@ -23,6 +23,7 @@ Route::get('auth/google', [GoogleController::class, 'redirect'])->name('auth.goo
 Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+
     Route::middleware([App\Http\Middleware\RedirectAdminToDashboard::class])->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
 

@@ -78,6 +78,7 @@ class GoogleController extends Controller
             'role' => 'owner',
             'is_active' => true,
             'terms_accepted_at' => now(),
+            'email_verified_at' => now(),
         ]);
 
         Auth::login($user);

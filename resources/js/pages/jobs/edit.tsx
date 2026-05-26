@@ -66,8 +66,9 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
     const { auth } = usePage().props as any;
     const user = auth.user;
     const isTechnician = user.role === 'technician';
-    const isCompleted = job.status === 'completed' || job.status === 'approved';
-    const canEdit = !isCompleted || !isTechnician;
+    const isApproved = job.status === 'approved';
+    const isCompleted = job.status === 'completed';
+    const canEdit = !isApproved && (!isCompleted || !isTechnician);
 
     const getLocalDateTime = () => {
         const now = new Date();
@@ -131,6 +132,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
             case 'new': return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Nowe</Badge>;
             case 'in_progress': return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">W toku</Badge>;
             case 'completed': return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Zakończone</Badge>;
+            case 'approved': return <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">Zatwierdzone</Badge>;
             default: return <Badge variant="outline">{status}</Badge>;
         }
     };
@@ -485,7 +487,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                     </div>
 
                     <div className="space-y-4">
-                        {requirements.length > 0 && job.status !== 'completed' && (
+                        {requirements.length > 0 && job.status !== 'completed' && job.status !== 'approved' && (
                             <Card className="border-amber-200 bg-amber-50/30 dark:border-amber-900/50 dark:bg-amber-950/10">
                                 <CardHeader className="pb-2">
                                     <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400">

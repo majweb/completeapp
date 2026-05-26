@@ -8,12 +8,17 @@ interface VoiceInputProps {
     onResult: (text: string) => void;
     className?: string;
     iconClassName?: string;
+    disabled?: boolean;
 }
 
-export function VoiceInput({ onResult, className, iconClassName }: VoiceInputProps) {
+export function VoiceInput({ onResult, className, iconClassName, disabled }: VoiceInputProps) {
     const [isListening, setIsListening] = useState(false);
 
     const startListening = useCallback(() => {
+        if (disabled) {
+            return;
+        }
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
@@ -54,6 +59,7 @@ export function VoiceInput({ onResult, className, iconClassName }: VoiceInputPro
             variant="ghost"
             size="icon"
             onClick={startListening}
+            disabled={disabled}
             className={cn(
                 "h-7 w-7 cursor-pointer transition-colors hover:bg-transparent",
                 isListening ? "text-red-500 animate-pulse" : "text-muted-foreground hover:text-primary",

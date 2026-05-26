@@ -12,6 +12,7 @@ const permissions = [
     { feature: 'Zlecenia (Widok)', owner: 'Wszystkie', manager: 'Wszystkie', technician: 'Tylko przypisane' },
     { feature: 'Zlecenia (Tworzenie/Edycja)', owner: true, manager: true, technician: 'Tylko własne' },
     { feature: 'Zlecenia (Usuwanie)', owner: true, manager: true, technician: 'Tylko przypisane' },
+    { feature: 'Zlecenia (Zatwierdzanie)', owner: true, manager: true, technician: false },
     { feature: 'Baza Klientów', owner: true, manager: true, technician: 'Widok' },
     { feature: 'Szablony Prac', owner: true, manager: true, technician: false },
     { feature: 'Zarządzanie Ekipą', owner: true, manager: true, technician: false },
@@ -63,6 +64,7 @@ export default function RolesGuide() {
                                     <ShieldCheck className="w-5 h-5" /> Instrukcja dla Właściciela
                                 </CardTitle>
                                 <CardDescription>Pełna kontrola nad organizacją i finansami.</CardDescription>
+                                <div className="mt-2 text-sm text-muted-foreground">Nowość: możesz zatwierdzać zlecenia zakończone przez techników. Po zatwierdzeniu status zmienia się na „Zatwierdzone”.</div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid gap-4 md:grid-cols-2">
@@ -98,6 +100,7 @@ export default function RolesGuide() {
                                     <Briefcase className="w-5 h-5" /> Instrukcja dla Managera
                                 </CardTitle>
                                 <CardDescription>Koordynacja zleceń i zarządzanie bazą klientów.</CardDescription>
+                                <div className="mt-2 text-sm text-muted-foreground">Nowość: możesz zatwierdzać zlecenia zakończone przez techników. Po zatwierdzeniu status zmienia się na „Zatwierdzone”.</div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid gap-4 md:grid-cols-2">
@@ -206,6 +209,7 @@ export default function RolesGuide() {
                         <li>Manager może zarządzać ekipą, ale nie ma dostępu do danych finansowych firmy.</li>
                         <li>Technik widzi tylko zlecenia, które są mu bezpośrednio przypisane.</li>
                         <li>Tylko Właściciel może zmieniać plan subskrypcji i zarządzać płatnościami.</li>
+                        <li>Zatwierdzanie jest dostępne tylko dla ról Właściciel i Manager i możliwe wyłącznie dla zleceń o statusie „Zakończone”.</li>
                     </ul>
                 </div>
             </div>

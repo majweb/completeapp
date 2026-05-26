@@ -4,7 +4,7 @@ import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, 
 import React, { useRef, useEffect, useState, useCallback, Suspense, lazy } from 'react';
 import SignaturePad from 'signature_pad';
 
-import { update, uploadMedia, saveSignature, deleteMedia, reorderMedia, sendReport, requestSignature } from '@/actions/App/Http/Controllers/JobController';
+import { update, uploadMedia, saveSignature, deleteMedia, reorderMedia, sendReport, requestSignature, approve } from '@/actions/App/Http/Controllers/JobController';
 const JobMap = lazy(() => import('@/components/job-map'));
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -103,6 +103,7 @@ const statusLabels: Record<string, string> = {
 export default function Show({ job, twilio_enabled, is_ready_for_signature, auth, features }: Props) {
     const user = auth.user as any;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
+    const isApproved = job.status === 'approved';
     const isOpenAiEnabled = features?.openai ?? false;
 
     const { data, setData, put, processing, errors } = useForm<{
@@ -126,6 +127,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     const [draggedItem, setDraggedItem] = useState<{ id: number, collection: string } | null>(null);
     const [dragOverItem, setDragOverItem] = useState<number | null>(null);
     const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+    const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     const requiredFields = data.checklist_content.filter(i => i.required);
@@ -373,6 +375,12 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     };
 
 
+    const handleApproveJob = () => {
+        router.post(approve(job.id).url, {}, {
+            onSuccess: () => setIsApproveDialogOpen(false),
+        });
+    };
+
     const handleSendReport = () => {
         router.post(sendReport.url({ job: job.id }), {}, {
             onSuccess: () => {
@@ -490,6 +498,9 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
 
             <Dialog open={previewImage !== null} onOpenChange={(open) => !open && setPreviewImage(null)}>
                 <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none [&>button]:cursor-pointer [&>button]:bg-white/20 [&>button]:hover:bg-white/40 [&>button]:rounded-full [&>button]:text-white z-[9999]">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Podgląd zdjęcia</DialogTitle>
+                    </DialogHeader>
                     {previewImage && (
                         <div className="relative flex items-center justify-center p-4 min-h-[300px]">
                             <img
@@ -532,6 +543,21 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                 </DialogContent>
             </Dialog>
 
+            <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+                <DialogContent className="[&>button]:cursor-pointer">
+                    <DialogHeader>
+                        <DialogTitle>Zatwierdź zlecenie</DialogTitle>
+                        <DialogDescription>
+                            Czy na pewno chcesz zatwierdzić to zlecenie? Status zmieni się na "Zatwierdzone".
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)} className="cursor-pointer">Anuluj</Button>
+                        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer" onClick={handleApproveJob}>Zatwierdź zlecenie</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-2 sm:gap-4">
@@ -546,7 +572,18 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                         </div>
                     </div>
                     <div className="flex items-center justify-between lg:justify-end gap-2">
-                        {isOwnerOrManager && (
+                        {isOwnerOrManager && job.status === 'completed' && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => setIsApproveDialogOpen(true)}
+                                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse border-none cursor-pointer"
+                            >
+                                <LucideCheckCircle2 className="mr-2 h-4 w-4" />
+                                Zatwierdź
+                            </Button>
+                        )}
+                        {isOwnerOrManager && !isApproved && (
                             <Button variant="outline" size="sm" asChild className="h-9 px-3 cursor-pointer">
                                 <Link href={editRoute(job.id).url}>
                                     <LucidePencil className="mr-2 h-4 w-4" />
@@ -878,7 +915,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                     size="sm"
                                     variant={hasUnsavedChanges ? "default" : "outline"}
                                     onClick={saveChecklist}
-                                    disabled={processing || !job.started_at}
+                                    disabled={processing || !job.started_at || isApproved}
                                     className={`h-8 px-2 sm:px-3 cursor-pointer transition-all duration-300 ${hasUnsavedChanges ? 'ring-2 ring-primary ring-offset-2' : ''}`}
                                 >
                                     {processing ? (
@@ -908,12 +945,22 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                         </div>
                                     </div>
                                 )}
-                                {!job.started_at && (
+                                {!job.started_at && !isApproved && (
                                     <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
                                         <div className="bg-card border shadow-sm p-4 rounded-lg text-center max-w-xs mx-4">
                                             <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                                             <p className="text-sm font-medium text-muted-foreground">
                                                 Rozpocznij zlecenie powyżej, aby móc wypełniać checklistę.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {isApproved && (
+                                    <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                        <div className="bg-card border shadow-sm p-4 rounded-lg text-center max-w-xs mx-4">
+                                            <LucideCheckCircle2 className="h-8 w-8 text-primary mx-auto mb-2" />
+                                            <p className="text-sm font-medium text-muted-foreground">
+                                                Zlecenie zostało zatwierdzone. Edycja checklisty jest zablokowana.
                                             </p>
                                         </div>
                                     </div>
@@ -924,21 +971,21 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             {item.type === 'checkbox' ? (
                                                 <div className="w-full">
                                                     <div
-                                                        className={`flex items-center gap-3 py-3 sm:py-2 transition-colors ${!job.started_at ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                                        onClick={() => job.started_at && updateChecklist(index, !item.value)}
+                                                        className={`flex items-center gap-3 py-3 sm:py-2 transition-colors ${(!job.started_at || isApproved) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                        onClick={() => job.started_at && !isApproved && updateChecklist(index, !item.value)}
                                                     >
                                                         <Checkbox
                                                             id={item.id}
                                                             checked={!!item.value}
-                                                            onCheckedChange={(checked) => job.started_at && updateChecklist(index, !!checked)}
+                                                            onCheckedChange={(checked) => job.started_at && !isApproved && updateChecklist(index, !!checked)}
                                                             aria-invalid={!!(errors as any)[`checklist_content.${index}.value`]}
                                                             className={`h-5 w-5 sm:h-4 sm:w-4 transition-transform ${item.value ? 'scale-110' : 'scale-100'}`}
-                                                            disabled={!job.started_at}
+                                                            disabled={!job.started_at || isApproved}
                                                         />
                                                         <div className="flex flex-1 items-center justify-between">
                                                             <Label
                                                                 htmlFor={item.id}
-                                                                className={`text-sm sm:text-base font-medium leading-none ${!job.started_at ? 'cursor-not-allowed' : 'cursor-pointer'} ${item.value ? 'text-muted-foreground line-through decoration-primary/30' : ''}`}
+                                                                className={`text-sm sm:text-base font-medium leading-none ${(!job.started_at || isApproved) ? 'cursor-not-allowed' : 'cursor-pointer'} ${item.value ? 'text-muted-foreground line-through decoration-primary/30' : ''}`}
                                                             >
                                                                 {item.label}
                                                                 {item.required && <span className="text-red-500 ml-1">*</span>}
@@ -968,19 +1015,16 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                             onChange={(e) => updateChecklist(index, e.target.value)}
                                                             required={item.required}
                                                             placeholder={item.type === 'number' ? '0' : 'Wpisz treść...'}
-                                                            disabled={!job.started_at}
+                                                            disabled={!job.started_at || isApproved}
                                                         />
                                                         {item.type === 'text' && (
                                                             <VoiceInput
                                                                 onResult={(text) => {
-                                                                    if (!job.started_at) {
-                                                                        return;
-                                                                    }
-
                                                                     const val = item.value || '';
                                                                     updateChecklist(index, val + (val ? ' ' : '') + text);
                                                                 }}
-                                                                className={`absolute right-1 top-1/2 -translate-y-1/2 ${!job.started_at ? 'pointer-events-none opacity-50' : ''}`}
+                                                                disabled={!job.started_at || isApproved}
+                                                                className="absolute right-1 top-1/2 -translate-y-1/2"
                                                             />
                                                         )}
                                                     </div>
@@ -1010,20 +1054,20 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                         {job.template.require_photo_before && <span className="text-red-500 font-bold">*</span>}
                                     </CardTitle>
                                     <div className="flex gap-2">
-                                        <Label htmlFor="capture-before" className={`flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-md transition-colors ${!job.started_at ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <Label htmlFor="capture-before" className={`flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-md transition-colors ${(!job.started_at || isApproved) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                                             <LucideCamera className="h-4 w-4" />
                                             <span className="text-[10px] font-bold uppercase tracking-wider hidden xs:inline">Aparat</span>
-                                            <input id="capture-before" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => job.started_at && handleFileUpload(e, 'images_before')} disabled={!job.started_at} />
+                                            <input id="capture-before" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => job.started_at && !isApproved && handleFileUpload(e, 'images_before')} disabled={!job.started_at || isApproved} />
                                         </Label>
-                                        <Label htmlFor="upload-before" className={`flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors ${!job.started_at ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <Label htmlFor="upload-before" className={`flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors ${(!job.started_at || isApproved) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                                             <LucidePlus className="h-4 w-4" />
                                             <span className="text-[10px] font-bold uppercase tracking-wider hidden xs:inline">Galeria</span>
-                                            <input id="upload-before" type="file" className="hidden" accept="image/*" onChange={(e) => job.started_at && handleFileUpload(e, 'images_before')} disabled={!job.started_at} />
+                                            <input id="upload-before" type="file" className="hidden" accept="image/*" onChange={(e) => job.started_at && !isApproved && handleFileUpload(e, 'images_before')} disabled={!job.started_at || isApproved} />
                                         </Label>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0 relative">
-                                    {!job.started_at && (
+                                    {!job.started_at && !isApproved && (
                                         <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
                                             <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
                                                 <Clock className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
@@ -1033,11 +1077,21 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             </div>
                                         </div>
                                     )}
+                                    {isApproved && (
+                                        <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                            <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
+                                                <LucideCheckCircle2 className="h-5 w-5 text-primary mx-auto mb-1" />
+                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                    Zlecenie zatwierdzone.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div
                                         className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-3 p-2 rounded-lg border-2 border-dashed transition-colors ${ (errors as any)['media.images_before'] ? 'border-destructive bg-destructive/5' : dragOver === 'images_before' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
-                                        onDragOver={(e) => job.started_at && onDragOver(e, 'images_before')}
+                                        onDragOver={(e) => job.started_at && !isApproved && onDragOver(e, 'images_before')}
                                         onDragLeave={onDragLeave}
-                                        onDrop={(e) => job.started_at && onDrop(e, 'images_before')}
+                                        onDrop={(e) => job.started_at && !isApproved && onDrop(e, 'images_before')}
                                     >
                                         {job.media.images_before.map((m, idx) => (
                                             <div
@@ -1077,7 +1131,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                             <LucideSearch className="h-4 w-4" />
                                                         </Button>
 
-                                                        {idx > 0 && (
+                                                        {idx > 0 && !isApproved && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
@@ -1090,7 +1144,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                                 <LucideArrowUp className="h-4 w-4" />
                                                             </Button>
                                                         )}
-                                                        {idx < job.media.images_before.length - 1 && (
+                                                        {idx < job.media.images_before.length - 1 && !isApproved && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
@@ -1105,17 +1159,19 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                         )}
                                                     </div>
 
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setMediaToDelete(m.id);
-                                                        }}
-                                                    >
-                                                        <LucideTrash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    {!isApproved && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setMediaToDelete(m.id);
+                                                            }}
+                                                        >
+                                                            <LucideTrash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -1148,20 +1204,20 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                         {job.template.require_photo_after && <span className="text-red-500 font-bold">*</span>}
                                     </CardTitle>
                                     <div className="flex gap-2">
-                                        <Label htmlFor="capture-after" className={`flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-md transition-colors ${!job.started_at ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <Label htmlFor="capture-after" className={`flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-md transition-colors ${(!job.started_at || isApproved) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                                             <LucideCamera className="h-4 w-4" />
                                             <span className="text-[10px] font-bold uppercase tracking-wider hidden xs:inline">Aparat</span>
-                                            <input id="capture-after" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => job.started_at && handleFileUpload(e, 'images_after')} disabled={!job.started_at} />
+                                            <input id="capture-after" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => job.started_at && !isApproved && handleFileUpload(e, 'images_after')} disabled={!job.started_at || isApproved} />
                                         </Label>
-                                        <Label htmlFor="upload-after" className={`flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors ${!job.started_at ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <Label htmlFor="upload-after" className={`flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors ${(!job.started_at || isApproved) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                                             <LucidePlus className="h-4 w-4" />
                                             <span className="text-[10px] font-bold uppercase tracking-wider hidden xs:inline">Galeria</span>
-                                            <input id="upload-after" type="file" className="hidden" accept="image/*" onChange={(e) => job.started_at && handleFileUpload(e, 'images_after')} disabled={!job.started_at} />
+                                            <input id="upload-after" type="file" className="hidden" accept="image/*" onChange={(e) => job.started_at && !isApproved && handleFileUpload(e, 'images_after')} disabled={!job.started_at || isApproved} />
                                         </Label>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0 relative">
-                                    {!job.started_at && (
+                                    {!job.started_at && !isApproved && (
                                         <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
                                             <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
                                                 <Clock className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
@@ -1171,11 +1227,21 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             </div>
                                         </div>
                                     )}
+                                    {isApproved && (
+                                        <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                            <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
+                                                <LucideCheckCircle2 className="h-5 w-5 text-primary mx-auto mb-1" />
+                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                    Zlecenie zatwierdzone.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div
                                         className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-3 p-2 rounded-lg border-2 border-dashed transition-colors ${ (errors as any)['media.images_after'] ? 'border-destructive bg-destructive/5' : dragOver === 'images_after' ? 'border-primary bg-primary/5' : 'border-transparent'}`}
-                                        onDragOver={(e) => job.started_at && onDragOver(e, 'images_after')}
+                                        onDragOver={(e) => job.started_at && !isApproved && onDragOver(e, 'images_after')}
                                         onDragLeave={onDragLeave}
-                                        onDrop={(e) => job.started_at && onDrop(e, 'images_after')}
+                                        onDrop={(e) => job.started_at && !isApproved && onDrop(e, 'images_after')}
                                     >
                                         {job.media.images_after.map((m, idx) => (
                                             <div
@@ -1215,7 +1281,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                             <LucideSearch className="h-4 w-4" />
                                                         </Button>
 
-                                                        {idx > 0 && (
+                                                        {idx > 0 && !isApproved && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
@@ -1228,7 +1294,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                                 <LucideArrowUp className="h-4 w-4" />
                                                             </Button>
                                                         )}
-                                                        {idx < job.media.images_after.length - 1 && (
+                                                        {idx < job.media.images_after.length - 1 && !isApproved && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
@@ -1243,17 +1309,19 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                                         )}
                                                     </div>
 
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setMediaToDelete(m.id);
-                                                        }}
-                                                    >
-                                                        <LucideTrash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    {!isApproved && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setMediaToDelete(m.id);
+                                                            }}
+                                                        >
+                                                            <LucideTrash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -1269,7 +1337,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             <span className="text-[10px] mt-1 text-muted-foreground font-medium text-center px-1">
                                                 {uploadingCollection === 'images_after' ? 'Przesyłanie...' : 'Dodaj lub upuść'}
                                             </span>
-                                            <input id="upload-after-grid" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleFileUpload(e, 'images_after')} disabled={!!uploadingCollection} />
+                                            <input id="upload-after-grid" type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleFileUpload(e, 'images_after')} disabled={!!uploadingCollection || isApproved} />
                                         </label>
                                     </div>
                                     { (errors as any)['media.images_after'] && (
@@ -1287,12 +1355,22 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-4 pt-0 relative">
-                                    {!job.started_at && (
+                                    {!job.started_at && !isApproved && (
                                         <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
                                             <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
                                                 <Clock className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
                                                 <p className="text-[10px] font-medium text-muted-foreground">
                                                     Rozpocznij zlecenie, aby zebrać podpis.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {isApproved && (
+                                        <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                            <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
+                                                <LucideCheckCircle2 className="h-5 w-5 text-primary mx-auto mb-1" />
+                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                    Zlecenie zatwierdzone.
                                                 </p>
                                             </div>
                                         </div>
@@ -1306,7 +1384,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                         <div className="space-y-2">
                                             <Dialog open={isSignatureOpen} onOpenChange={(open) => job.started_at && is_ready_for_signature && setIsSignatureOpen(open)}>
                                                 <DialogTrigger asChild>
-                                                    <Button variant="secondary" disabled={!job.started_at || !is_ready_for_signature} className={`w-full h-24 border-2 border-dashed flex-col ${!job.started_at || !is_ready_for_signature ? 'cursor-not-allowed' : 'cursor-pointer'} ${ (errors as any)['media.signature'] ? 'border-destructive bg-destructive/5 text-destructive' : ''}`}>
+                                                    <Button variant="secondary" disabled={!job.started_at || !is_ready_for_signature || isApproved} className={`w-full h-24 border-2 border-dashed flex-col ${!job.started_at || !is_ready_for_signature || isApproved ? 'cursor-not-allowed' : 'cursor-pointer'} ${ (errors as any)['media.signature'] ? 'border-destructive bg-destructive/5 text-destructive' : ''}`}>
                                                         <LucidePencil className="h-6 w-6 mb-1" />
                                                         Zbierz podpis na miejscu
                                                     </Button>
@@ -1356,9 +1434,9 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
 
                                             <Button
                                                 variant="outline"
-                                                className={`w-full text-xs ${!is_ready_for_signature ? 'opacity-50' : ''}`}
+                                                className={`w-full text-xs ${(!is_ready_for_signature || isApproved) ? 'opacity-50' : ''}`}
                                                 onClick={handleRequestSignature}
-                                                disabled={!job.started_at || processing || !is_ready_for_signature}
+                                                disabled={!job.started_at || processing || !is_ready_for_signature || isApproved}
                                             >
                                                 <LucideMail className="mr-2 h-3.5 w-3.5" />
                                                 Poproś o podpis zdalny
@@ -1389,7 +1467,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                         size="sm"
                                         variant="outline"
                                         onClick={handleGenerateAISummary}
-                                        disabled={processing}
+                                        disabled={processing || isApproved}
                                         className="cursor-pointer"
                                     >
                                         {job.report_summary ? (

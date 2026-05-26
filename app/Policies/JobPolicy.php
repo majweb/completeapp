@@ -48,11 +48,15 @@ class JobPolicy
             return false;
         }
 
+        if ($job->status->value === 'approved') {
+            return false;
+        }
+
         if (in_array($user->role, ['owner', 'manager'])) {
             return true;
         }
 
-        if ($job->status->value === 'completed' || $job->status->value === 'approved') {
+        if ($job->status->value === 'completed') {
             return false;
         }
 

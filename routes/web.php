@@ -1,19 +1,22 @@
 <?php
 
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\ClientController;
-use App\Http\Controllers\CompanyController;
-use App\Http\Controllers\JobController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\TechnicianController;
-use App\Http\Controllers\JobTemplateController;
-use App\Http\Controllers\ClientSignatureController;
-use App\Http\Controllers\PublicJobController;
 use App\Http\Controllers\Auth\GoogleController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientSignatureController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GuideController;
+use App\Http\Controllers\JobController;
+use App\Http\Controllers\JobTemplateController;
+use App\Http\Controllers\PublicJobController;
+use App\Http\Controllers\TechnicianController;
+use App\Http\Middleware\RedirectAdminToDashboard;
 use App\Mail\TestMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Route;
+use Laravel\Cashier\Http\Controllers\WebhookController;
 
 Route::inertia('/', 'welcome')->name('home');
 Route::inertia('/terms', 'terms')->name('terms');
@@ -24,7 +27,7 @@ Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name(
 
 Route::middleware(['auth', 'verified', 'no-ssr'])->group(function () {
 
-    Route::middleware([App\Http\Middleware\RedirectAdminToDashboard::class])->group(function () {
+    Route::middleware([RedirectAdminToDashboard::class])->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
 
         Route::post('clients/import', [ClientController::class, 'import'])->name('clients.import');
@@ -43,6 +46,7 @@ Route::middleware(['auth', 'verified', 'no-ssr'])->group(function () {
         Route::post('jobs/{job}/report/send', [JobController::class, 'sendReport'])->name('jobs.sendReport');
         Route::post('jobs/{job}/generate-summary', [JobController::class, 'generateSummary'])->name('jobs.generateSummary');
         Route::post('jobs/{job}/request-signature', [JobController::class, 'requestSignature'])->name('jobs.requestSignature');
+        Route::post('jobs/{job}/approve', [JobController::class, 'approve'])->name('jobs.approve');
 
         Route::get('/company/settings', [CompanyController::class, 'edit'])->name('company.edit');
         Route::post('/company/settings', [CompanyController::class, 'update'])->name('company.update');
@@ -54,7 +58,7 @@ Route::middleware(['auth', 'verified', 'no-ssr'])->group(function () {
         Route::get('/subscription/invoices/{invoice}', [CompanyController::class, 'downloadInvoice'])->name('subscription.invoices.download');
 
         Route::inertia('/roles-guide', 'roles-guide')->name('roles-guide');
-        Route::get('/guide/download', [App\Http\Controllers\GuideController::class, 'downloadPdf'])->name('guide.download');
+        Route::get('/guide/download', [GuideController::class, 'downloadPdf'])->name('guide.download');
 
         Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
         Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
@@ -70,7 +74,7 @@ Route::middleware(['auth', 'verified', 'no-ssr'])->group(function () {
     Route::post('stop-impersonating', [AdminController::class, 'stopImpersonating'])->name('admin.stop-impersonating');
 });
 
-Route::post('/stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook']);
+Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook']);
 
 Route::get('public/jobs/{job}/signature', [ClientSignatureController::class, 'show'])->name('client.signature.show');
 Route::post('public/jobs/{job}/signature', [ClientSignatureController::class, 'store'])->name('client.signature.store');
@@ -78,7 +82,8 @@ Route::post('public/jobs/{job}/signature', [ClientSignatureController::class, 's
 Route::get('view/job/{job:uuid}', [PublicJobController::class, 'show'])->name('public.job.show');
 
 Route::get('test-mail', function () {
-    Mail::to('test@example.com')->send(new TestMail());
+    Mail::to('test@example.com')->send(new TestMail);
+
     return 'Mail wysłany!';
 })->name('test-mail');
 

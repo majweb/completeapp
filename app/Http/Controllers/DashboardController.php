@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Job;
-use App\Models\Client;
 use App\Enums\JobStatus;
+use App\Models\Client;
+use App\Models\Job;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -29,7 +29,7 @@ class DashboardController extends Controller
         $stats = [
             'total_jobs' => (clone $statsQuery)->count(),
             'active_jobs' => (clone $statsQuery)->whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS])->count(),
-            'completed_today' => (clone $statsQuery)->where('status', JobStatus::COMPLETED)
+            'completed_today' => (clone $statsQuery)->whereIn('status', [JobStatus::COMPLETED, JobStatus::APPROVED])
                 ->whereDate('completed_at', now())
                 ->count(),
             'total_clients' => Client::count(), // Klienci pozostają widoczni dla wszystkich (zgodnie z ClientPolicy)
@@ -59,9 +59,9 @@ class DashboardController extends Controller
             ->groupBy('date')
             ->orderBy('date')
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'date' => Carbon::parse($item->date)->format('d.m'),
-                'count' => $item->count
+                'count' => $item->count,
             ]);
 
         $recent_jobs = $recentQuery->with('client', 'template')
@@ -75,11 +75,11 @@ class DashboardController extends Controller
             $map_jobs = Job::query()
                 ->with('client:id,name,address,latitude,longitude')
                 ->whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS])
-                ->whereHas('client', function($query) {
+                ->whereHas('client', function ($query) {
                     $query->whereNotNull('latitude')->whereNotNull('longitude');
                 })
                 ->get()
-                ->map(fn($job) => [
+                ->map(fn ($job) => [
                     'id' => $job->id,
                     'status' => $job->status->value,
                     'status_label' => $job->status->label(),

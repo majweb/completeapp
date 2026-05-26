@@ -1,11 +1,11 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import imageCompression from 'browser-image-compression';
 import { Bell, LucideArrowLeft, LucideCalendar, LucideUser, LucideCheckCircle2, LucideCamera, LucideFileText, LucidePlus, LucideSave, LucideCheck, LucidePencil, LucideTrash2, LucideMail, LucideUpload, LucideLoader2, LucideArrowUp, LucideArrowDown, LucideSparkles, LucideRefreshCcw, LucidePlusCircle, LucideArrowRight, Clock, LucideExternalLink, LucideSearch, LucideCopy } from 'lucide-react';
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, Suspense, lazy } from 'react';
 import SignaturePad from 'signature_pad';
 
 import { update, uploadMedia, saveSignature, deleteMedia, reorderMedia, sendReport, requestSignature } from '@/actions/App/Http/Controllers/JobController';
-import JobMap from '@/components/job-map';
+const JobMap = lazy(() => import('@/components/job-map'));
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1476,20 +1476,22 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                 </div>
                                 {job.client?.latitude && job.client?.longitude && (
                                     <div className="mt-2 relative z-0">
-                                        <JobMap
-                                            jobs={[{
-                                                id: job.id,
-                                                status: job.status,
-                                                status_label: statusLabels[job.status] || job.status,
-                                                client_name: job.client.name,
-                                                address: job.client.address || '',
-                                                latitude: job.client.latitude,
-                                                longitude: job.client.longitude
-                                            }]}
-                                            height="150px"
-                                            zoom={14}
-                                            center={[job.client.latitude, job.client.longitude]}
-                                        />
+                                        <Suspense fallback={<div style={{ height: '150px' }} className="bg-muted animate-pulse rounded-lg" />}>
+                                            <JobMap
+                                                jobs={[{
+                                                    id: job.id,
+                                                    status: job.status,
+                                                    status_label: statusLabels[job.status] || job.status,
+                                                    client_name: job.client.name,
+                                                    address: job.client.address || '',
+                                                    latitude: job.client.latitude,
+                                                    longitude: job.client.longitude
+                                                }]}
+                                                height="150px"
+                                                zoom={14}
+                                                center={[job.client.latitude, job.client.longitude]}
+                                            />
+                                        </Suspense>
                                     </div>
                                 )}
                                 <Separator />

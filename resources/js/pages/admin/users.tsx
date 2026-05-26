@@ -1,8 +1,10 @@
 import { Head, router } from '@inertiajs/react';
-import { pickBy } from 'lodash';
+import _ from 'lodash';
+const { pickBy } = _;
 import { Building, LogIn, Search, User, UserCheck, UserMinus, X } from 'lucide-react';
 import { useState } from 'react';
-import { useDebounce } from 'react-use';
+import * as ReactUse from 'react-use';
+const { useDebounce } = ReactUse;
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

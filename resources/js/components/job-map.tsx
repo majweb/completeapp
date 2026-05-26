@@ -84,6 +84,8 @@ const createCustomIcon = (status: string) => {
 };
 
 export default function JobMap({ jobs, height = "400px", center, zoom = 10 }: JobMapProps) {
+    const isClient = typeof window !== 'undefined';
+
     const defaultCenter: [number, number] = useMemo(() => {
         if (center) {
             return center;
@@ -95,6 +97,10 @@ export default function JobMap({ jobs, height = "400px", center, zoom = 10 }: Jo
 
         return [52.2297, 21.0122]; // Warszawa jako fallback
     }, [center, jobs]);
+
+    if (!isClient) {
+        return <div style={{ height, width: '100%', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }} />;
+    }
 
     return (
         <div style={{ height, width: '100%', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #e2e8f0' }}>

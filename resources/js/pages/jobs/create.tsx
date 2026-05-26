@@ -1,10 +1,10 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { LucideAlertCircle, LucideArrowLeft, LucidePlus, LucideSave, LucideInfo, LucideMail, LucidePhone, LucideMapPin, LucideUser, LucideNavigation } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, Suspense, lazy } from 'react';
 
 import { store } from '@/actions/App/Http/Controllers/JobController';
 import InputError from '@/components/input-error';
-import JobMap from '@/components/job-map';
+const JobMap = lazy(() => import('@/components/job-map'));
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -429,12 +429,14 @@ export default function Create({ clients, templates, technicians }: Props) {
                                         {selectedClient.latitude && selectedClient.longitude && (
                                             <div className="space-y-2">
                                                 <Label>Lokalizacja</Label>
-                                                <JobMap
-                                                    jobs={clientMapData}
-                                                    height="200px"
-                                                    center={[selectedClient.latitude, selectedClient.longitude]}
-                                                    zoom={15}
-                                                />
+                                                <Suspense fallback={<div style={{ height: '200px' }} className="bg-muted animate-pulse rounded-lg" />}>
+                                                    <JobMap
+                                                        jobs={clientMapData}
+                                                        height="200px"
+                                                        center={[selectedClient.latitude, selectedClient.longitude]}
+                                                        zoom={15}
+                                                    />
+                                                </Suspense>
                                             </div>
                                         )}
                                     </CardContent>

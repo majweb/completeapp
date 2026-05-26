@@ -36,6 +36,11 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // Wyłącz SSR dla zalogowanych użytkowników, aby uniknąć problemów z Leaflet/lodash i zmniejszyć obciążenie
+        if ($request->user()) {
+            config(['inertia.ssr.enabled' => false]);
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),

@@ -2,9 +2,11 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Bell, Briefcase, CheckCircle, Clock, MapPin, Users, ChevronDown, ChevronUp, Home, HelpCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Area, AreaChart, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
+import { Suspense, lazy } from 'react';
 
 import { show as jobShow } from '@/actions/App/Http/Controllers/JobController';
-import JobMap from '@/components/job-map';
+
+const JobMap = lazy(() => import('@/components/job-map'));
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -163,7 +165,9 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
                         </CardHeader>
                         {isMapVisible && (
                             <CardContent>
-                                <JobMap jobs={map_jobs} height="300px" zoom={11} />
+                                <Suspense fallback={<div style={{ height: '300px' }} className="bg-muted animate-pulse rounded-lg" />}>
+                                    <JobMap jobs={map_jobs} height="300px" zoom={11} />
+                                </Suspense>
                             </CardContent>
                         )}
                     </Card>

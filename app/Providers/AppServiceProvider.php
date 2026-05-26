@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\SubscriptionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,14 @@ class AppServiceProvider extends ServiceProvider
                 ], false)))
                 ->line('Ten link do resetowania hasła wygaśnie za :count minut.', ['count' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire')])
                 ->line('Jeśli nie prosiłeś o zresetowanie hasła, nie musisz podejmować żadnych dalszych działań.');
+        });
+
+        VerifyEmail::toMailUsing(function ($notifiable, $url) {
+            return (new MailMessage)
+                ->subject('Weryfikacja adresu e-mail')
+                ->line('Kliknij poniższy przycisk, aby zweryfikować swój adres e-mail.')
+                ->action('Zweryfikuj adres e-mail', $url)
+                ->line('Jeśli nie tworzyłeś konta, nie musisz podejmować żadnych dalszych działań.');
         });
     }
 

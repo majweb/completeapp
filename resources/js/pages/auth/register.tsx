@@ -183,7 +183,7 @@ export default function Register({ passwordRules }: Props) {
                         <div className="grid gap-1.5 leading-none">
                             <Label
                                 htmlFor="terms"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                className="cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                             >
                                 Akceptuję <Link href={terms().url} className="text-[#f53003] hover:underline" target="_blank">Regulamin</Link> oraz <Link href={privacy().url} className="text-[#f53003] hover:underline" target="_blank">Politykę Prywatności</Link>
                             </Label>

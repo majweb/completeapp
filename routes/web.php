@@ -77,8 +77,8 @@ Route::post('public/jobs/{job}/signature', [ClientSignatureController::class, 's
 Route::get('view/job/{job:uuid}', [PublicJobController::class, 'show'])->name('public.job.show');
 
 Route::get('test-mail', function () {
-//    Mail::to('marcin.five@gmail.com')->send(new TestMail());
-//    return 'Mail wysłany!';
+    Mail::to('test@example.com')->send(new TestMail());
+    return 'Mail wysłany!';
 })->name('test-mail');
 
 require __DIR__.'/settings.php';

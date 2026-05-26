@@ -1,4 +1,4 @@
-import { Form, Head, router } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import { LucideMail, LucideLock } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasskeyVerify from '@/components/passkey-verify';
@@ -124,7 +124,11 @@ export default function Login({ status, canResetPassword }: Props) {
                             variant="outline"
                             type="button"
                             className="w-full"
-                            onClick={() => router.visit(auth.google().url)}
+                    onClick={() => {
+                        if (typeof window !== 'undefined') {
+                            window.location.href = auth.google().url;
+                        }
+                    }}
                         >
                             <svg
                                 className="mr-2 h-4 w-4"

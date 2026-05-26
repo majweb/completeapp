@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { LucideUser, LucideMail, LucideLock, LucideBuilding2 } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -225,7 +225,11 @@ export default function Register({ passwordRules }: Props) {
                     variant="outline"
                     type="button"
                     className="w-full"
-                    onClick={() => router.visit(auth.google().url)}
+                    onClick={() => {
+                        if (typeof window !== 'undefined') {
+                            window.location.href = auth.google().url;
+                        }
+                    }}
                 >
                     <svg
                         className="mr-2 h-4 w-4"

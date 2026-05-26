@@ -1,4 +1,4 @@
-import { Form, Head, usePage, router } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import { LucideCheckCircle, LucideAlertCircle } from 'lucide-react';
 import React from 'react';
@@ -142,7 +142,11 @@ export default function Profile({
                                 <Button
                                     variant="outline"
                                     type="button"
-                                    onClick={() => router.visit(auth_routes.google().url)}
+                                    onClick={() => {
+                                        if (typeof window !== 'undefined') {
+                                            window.location.href = auth_routes.google().url;
+                                        }
+                                    }}
                                 >
                                     <svg
                                         className="mr-2 h-4 w-4"

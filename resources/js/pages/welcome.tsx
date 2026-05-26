@@ -33,7 +33,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { usePwaInstall } from '@/hooks/use-pwa-install';
-import { dashboard, login, register } from '@/routes';
+import { dashboard, login, privacy, register, terms } from '@/routes';
 
 export default function Welcome() {
     const { auth } = usePage().props;
@@ -489,8 +489,8 @@ export default function Welcome() {
                             © 2026 Zlecenio. System klasy FSM napędzany przez AI. Wszystkie prawa zastrzeżone.
                         </p>
                         <div className="flex gap-6">
-                            <a href="https://laravel.com/docs" target="_blank" className="text-xs hover:text-[#f53003] transition-colors dark:hover:text-[#FF4433]">Dokumentacja</a>
-                            <a href="#" className="text-xs hover:text-[#f53003] transition-colors dark:hover:text-[#FF4433]">Prywatność</a>
+                            <Link href={terms().url} className="text-xs hover:text-[#f53003] transition-colors dark:hover:text-[#FF4433]">Regulamin</Link>
+                            <Link href={privacy().url} className="text-xs hover:text-[#f53003] transition-colors dark:hover:text-[#FF4433]">Prywatność</Link>
                         </div>
                     </div>
                 </footer>

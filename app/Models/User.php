@@ -18,7 +18,7 @@ use App\Traits\BelongsToCompany;
 
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'email', 'password', 'company_id', 'role', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'company_id', 'role', 'is_active', 'terms_accepted_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -37,6 +37,7 @@ class User extends Authenticatable implements PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'is_active' => 'boolean',
+            'terms_accepted_at' => 'datetime',
         ];
     }
 

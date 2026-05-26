@@ -1,13 +1,14 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { LucideUser, LucideMail, LucideLock, LucideBuilding2 } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { login } from '@/routes';
+import { login, privacy, terms } from '@/routes';
 import { store } from '@/routes/register';
 
 type Props = {
@@ -21,6 +22,7 @@ export default function Register({ passwordRules }: Props) {
         password: '',
         password_confirmation: '',
         company_name: '',
+        terms: false,
     });
 
     const submit = (e: React.FormEvent) => {
@@ -138,6 +140,23 @@ export default function Register({ passwordRules }: Props) {
                         <InputError
                             message={errors.password_confirmation}
                         />
+                    </div>
+
+                    <div className="flex items-start space-x-2 py-2">
+                        <Checkbox
+                            id="terms"
+                            checked={data.terms}
+                            onCheckedChange={(checked) => setData('terms', !!checked)}
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                            <Label
+                                htmlFor="terms"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                Akceptuję <Link href={terms().url} className="text-[#f53003] hover:underline" target="_blank">Regulamin</Link> oraz <Link href={privacy().url} className="text-[#f53003] hover:underline" target="_blank">Politykę Prywatności</Link>
+                            </Label>
+                            <InputError message={errors.terms} />
+                        </div>
                     </div>
 
                     <Button

@@ -30,6 +30,7 @@ class CreateNewUser implements CreatesNewUsers
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => $this->passwordRules(),
             'company_name' => ['required', 'string', 'max:255'],
+            'terms' => ['accepted'],
         ])->validate();
 
         return DB::transaction(function () use ($input) {
@@ -44,6 +45,7 @@ class CreateNewUser implements CreatesNewUsers
                 'password' => Hash::make($input['password']),
                 'company_id' => $company->id,
                 'role' => 'owner',
+                'terms_accepted_at' => now(),
             ]);
 
             $adminEmail = config('mail.from.address');

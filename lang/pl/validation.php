@@ -195,6 +195,12 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'name' => 'imię i nazwisko',
+        'email' => 'adres e-mail',
+        'password' => 'hasło',
+        'company_name' => 'nazwa firmy',
+        'terms' => 'regulamin',
+    ],
 
 ];

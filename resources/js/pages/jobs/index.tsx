@@ -7,16 +7,6 @@ import * as ReactUse from 'react-use';
 const { useDebounce } = ReactUse;
 
 import { destroy as destroyAction, duplicate as duplicateAction } from '@/actions/App/Http/Controllers/JobController';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -324,7 +314,7 @@ export default function Index({ jobs, filters, technicians }: Props) {
                                             <LucideCopy className="h-3 w-3" />
                                         </Button>
                                     )}
-                                    {(!isTechnician || job.technician?.id === user.id) && (
+                                    {(!isTechnician || (job.technician?.id === user.id && job.status !== 'completed' && job.status !== 'approved')) && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -404,26 +394,28 @@ export default function Index({ jobs, filters, technicians }: Props) {
             </div>
 
             {/* Dialog potwierdzenia usuwania */}
-            <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Czy na pewno chcesz usunąć to zlecenie?</AlertDialogTitle>
-                        <AlertDialogDescription>
+            <Dialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Czy na pewno chcesz usunąć to zlecenie?</DialogTitle>
+                        <DialogDescription>
                             Ta operacja jest nieodwracalna. Wszystkie dane zlecenia, w tym checklisty i zdjęcia, zostaną usunięte.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="cursor-pointer">Anuluj</AlertDialogCancel>
-                        <AlertDialogAction
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="ghost">Anuluj</Button>
+                        </DialogClose>
+                        <Button
+                            variant="destructive"
                             onClick={confirmDelete}
                             disabled={processing}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
                         >
                             Usuń zlecenie
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Dialog potwierdzenia duplikowania */}
             <Dialog open={!!jobToDuplicate} onOpenChange={(open) => !open && setJobToDuplicate(null)}>

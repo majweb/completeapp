@@ -229,6 +229,7 @@ class JobController extends Controller
             'completed_at' => 'nullable|date|after_or_equal:started_at',
             'status' => 'sometimes|string',
             'checklist_content' => 'sometimes|array',
+            'report_summary' => 'sometimes|nullable|string',
             'send_sms' => 'sometimes|boolean',
         ], [], [
             'client_id' => 'klient',
@@ -236,6 +237,7 @@ class JobController extends Controller
             'scheduled_at' => 'zaplanowana data i godzina',
             'started_at' => 'data rozpoczęcia',
             'completed_at' => 'data zakończenia',
+            'report_summary' => 'podsumowanie raportu',
         ]);
 
         if ($request->filled('started_at') && ($request->status ?? $job->status->value) === 'new') {
@@ -254,42 +256,42 @@ class JobController extends Controller
             }
         }
 
-            if ($request->has('checklist_content')) {
-                $checklist_content = $request->checklist_content;
+        if ($request->has('checklist_content')) {
+            $checklist_content = $request->checklist_content;
 
-                // Walidacja pól wymaganych w checklist_content
-                $errors = [];
-                foreach ($checklist_content as $index => $item) {
-                    $val = $item['value'] ?? null;
-                    if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
-                        $errors["checklist_content.{$index}.value"] = 'To pole jest wymagane.';
-                    }
-                }
-
-                if (! empty($errors)) {
-                    return back()->withErrors($errors);
-                }
-
-                $isCompleted = count($checklist_content) > 0;
-                foreach ($checklist_content as $item) {
-                    $val = $item['value'] ?? null;
-                    if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
-                        $isCompleted = false;
-                        break;
-                    }
-                }
-
-                $currentContent = $job->checklist->content;
-                $currentIsCompleted = $job->checklist->is_completed;
-
-                // Tylko jeśli faktycznie coś się zmieniło w zawartości lub statusie skompletowania
-                if ($currentContent !== $checklist_content || (bool) $currentIsCompleted !== (bool) $isCompleted) {
-                    $job->checklist->update([
-                        'content' => $checklist_content,
-                        'is_completed' => $isCompleted,
-                    ]);
+            // Walidacja pól wymaganych w checklist_content
+            $errors = [];
+            foreach ($checklist_content as $index => $item) {
+                $val = $item['value'] ?? null;
+                if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                    $errors["checklist_content.{$index}.value"] = 'To pole jest wymagane.';
                 }
             }
+
+            if (! empty($errors)) {
+                return back()->withErrors($errors);
+            }
+
+            $isCompleted = count($checklist_content) > 0;
+            foreach ($checklist_content as $item) {
+                $val = $item['value'] ?? null;
+                if (! empty($item['required']) && ($val === null || $val === '' || $val === false)) {
+                    $isCompleted = false;
+                    break;
+                }
+            }
+
+            $currentContent = $job->checklist->content;
+            $currentIsCompleted = $job->checklist->is_completed;
+
+            // Tylko jeśli faktycznie coś się zmieniło w zawartości lub statusie skompletowania
+            if ($currentContent !== $checklist_content || (bool) $currentIsCompleted !== (bool) $isCompleted) {
+                $job->checklist->update([
+                    'content' => $checklist_content,
+                    'is_completed' => $isCompleted,
+                ]);
+            }
+        }
 
         if ($request->has('status')) {
             if ($request->status === 'in_progress' && ! $job->started_at && ! isset($validated['started_at'])) {
@@ -495,6 +497,19 @@ class JobController extends Controller
         } catch (\Exception $e) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Błąd podczas wysyłki: '.$e->getMessage()]);
         }
+
+        return back();
+    }
+
+    public function approve(Job $job)
+    {
+        Gate::authorize('approve', $job);
+
+        $job->update([
+            'status' => JobStatus::APPROVED,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Zlecenie zostało zatwierdzone.']);
 
         return back();
     }

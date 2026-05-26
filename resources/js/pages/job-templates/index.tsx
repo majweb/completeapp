@@ -1,8 +1,10 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { LucideFileText, LucidePlus, LucideTrash2, LucideEdit } from 'lucide-react';
+import { LucidePlus, LucideTrash2, LucideEdit } from 'lucide-react';
+import React, { useState } from 'react';
+import { index, create, edit, destroy } from '@/actions/App/Http/Controllers/JobTemplateController';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { index, create, edit, destroy } from '@/actions/App/Http/Controllers/JobTemplateController';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 
 interface Template {
     id: number;
@@ -13,11 +15,15 @@ interface Template {
 }
 
 export default function Index({ templates }: { templates: Template[] }) {
-    const { delete: destroyTemplate } = useForm();
+    const [templateToDelete, setTemplateToDelete] = useState<number | null>(null);
+    const { delete: destroyTemplate, processing } = useForm();
 
-    const handleDelete = (id: number) => {
-        if (confirm('Czy na pewno chcesz usunąć ten szablon?')) {
-            destroyTemplate(destroy.url(id));
+    const confirmDelete = () => {
+        if (templateToDelete) {
+            destroyTemplate(destroy.url(templateToDelete), {
+                onSuccess: () => setTemplateToDelete(null),
+                onFinish: () => setTemplateToDelete(null),
+            });
         }
     };
 
@@ -72,7 +78,7 @@ export default function Index({ templates }: { templates: Template[] }) {
                                                                 <LucideEdit className="h-4 w-4" />
                                                             </Link>
                                                         </Button>
-                                                        <Button variant="outline" size="icon" className="text-destructive cursor-pointer" onClick={() => handleDelete(template.id)}>
+                                                        <Button variant="outline" size="icon" className="text-destructive cursor-pointer" onClick={() => setTemplateToDelete(template.id)}>
                                                             <LucideTrash2 className="h-4 w-4" />
                                                         </Button>
                                                     </div>
@@ -85,6 +91,25 @@ export default function Index({ templates }: { templates: Template[] }) {
                         </div>
                     </CardContent>
                 </Card>
+
+                <Dialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Czy na pewno chcesz usunąć ten szablon?</DialogTitle>
+                            <DialogDescription>
+                                Ta operacja jest nieodwracalna. Szablon zostanie trwale usunięty z systemu.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button variant="outline">Anuluj</Button>
+                            </DialogClose>
+                            <Button variant="destructive" onClick={confirmDelete} disabled={processing}>
+                                Usuń szablon
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </>
     );

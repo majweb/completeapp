@@ -52,6 +52,10 @@ class JobPolicy
             return true;
         }
 
+        if ($job->status->value === 'completed' || $job->status->value === 'approved') {
+            return false;
+        }
+
         return $job->assigned_to === $user->id;
     }
 
@@ -69,5 +73,21 @@ class JobPolicy
         }
 
         return $user->role === 'technician' && $job->assigned_to === $user->id;
+    }
+
+    /**
+     * Determine whether the user can approve the model.
+     */
+    public function approve(User $user, Job $job): bool
+    {
+        if ($user->company_id !== $job->company_id) {
+            return false;
+        }
+
+        if (! in_array($user->role, ['owner', 'manager'])) {
+            return false;
+        }
+
+        return $job->status->value === 'completed';
     }
 }

@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { LucideArrowLeft, LucideSave, LucideInfo, LucideMail, LucidePhone, LucideMapPin, LucideUser, LucideNavigation, LucideAlertTriangle, LucideCheckCircle2, LucideCircle, LucideMessageSquare } from 'lucide-react';
 import { useMemo, Suspense, lazy } from 'react';
 
@@ -63,6 +63,12 @@ interface Props {
 }
 
 export default function Edit({ job, clients, templates, technicians }: Props) {
+    const { auth } = usePage().props as any;
+    const user = auth.user;
+    const isTechnician = user.role === 'technician';
+    const isCompleted = job.status === 'completed' || job.status === 'approved';
+    const canEdit = !isCompleted || !isTechnician;
+
     const getLocalDateTime = () => {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -82,9 +88,9 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
     };
 
     const { data, setData, put, processing, errors } = useForm({
-        client_id: job.client_id.toString(),
-        template_id: job.template_id.toString(),
-        assigned_to: job.assigned_to.toString(),
+        client_id: job.client_id?.toString() || '',
+        template_id: job.template_id?.toString() || '',
+        assigned_to: job.assigned_to?.toString() || '',
         scheduled_at: formatDateTimeForInput(job.scheduled_at),
         started_at: formatDateTimeForInput(job.started_at),
         completed_at: formatDateTimeForInput(job.completed_at),
@@ -92,6 +98,10 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
     });
 
     const selectedClient = useMemo(() => {
+        if (!data.client_id) {
+            return null;
+        }
+
         return clients.find((c) => c.id.toString() === data.client_id) || null;
     }, [data.client_id, clients]);
 
@@ -189,6 +199,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                 <Select
                                                     defaultValue={data.client_id}
                                                     onValueChange={(value) => setData('client_id', value)}
+                                                    disabled={!canEdit}
                                                 >
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue placeholder="Wybierz klienta" />
@@ -255,6 +266,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                 <Select
                                                     defaultValue={data.assigned_to}
                                                     onValueChange={(value) => setData('assigned_to', value)}
+                                                    disabled={!canEdit}
                                                 >
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue placeholder="Wybierz technika" />
@@ -301,6 +313,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                                 onChange={(e) => setData('scheduled_at', e.target.value)}
                                                                 onClick={(e) => e.currentTarget.showPicker()}
                                                                 required
+                                                                disabled={!canEdit}
                                                             />
                                                         </div>
                                                         <div className="flex flex-wrap gap-1">
@@ -310,6 +323,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                                 size="sm"
                                                                 className="h-8 sm:h-9 px-2 text-xs sm:text-sm flex-1 sm:flex-none"
                                                                 onClick={() => setData('scheduled_at', getLocalDateTime())}
+                                                                disabled={!canEdit}
                                                             >
                                                                 Dziś
                                                             </Button>
@@ -324,6 +338,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                                     tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
                                                                     setData('scheduled_at', tomorrow.toISOString().slice(0, 16));
                                                                 }}
+                                                                disabled={!canEdit}
                                                             >
                                                                 Jutro
                                                             </Button>
@@ -338,6 +353,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                                     weekLater.setMinutes(weekLater.getMinutes() - weekLater.getTimezoneOffset());
                                                                     setData('scheduled_at', weekLater.toISOString().slice(0, 16));
                                                                 }}
+                                                                disabled={!canEdit}
                                                             >
                                                                 Tydzień
                                                             </Button>
@@ -352,6 +368,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                                     monthLater.setMinutes(monthLater.getMinutes() - monthLater.getTimezoneOffset());
                                                                     setData('scheduled_at', monthLater.toISOString().slice(0, 16));
                                                                 }}
+                                                                disabled={!canEdit}
                                                             >
                                                                 Miesiąc
                                                             </Button>
@@ -375,6 +392,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                         value={data.started_at}
                                                         onChange={(e) => setData('started_at', e.target.value)}
                                                         onClick={(e) => e.currentTarget.showPicker()}
+                                                        disabled={!canEdit}
                                                     />
                                                     <Button
                                                         type="button"
@@ -382,6 +400,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                         size="sm"
                                                         className="h-9 px-3 sm:px-4"
                                                         onClick={() => setData('started_at', getLocalDateTime())}
+                                                        disabled={!canEdit}
                                                     >
                                                         Teraz
                                                     </Button>
@@ -400,6 +419,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                         onChange={(e) => setData('completed_at', e.target.value)}
                                                         onClick={(e) => e.currentTarget.showPicker()}
                                                         min={data.started_at}
+                                                        disabled={!canEdit}
                                                     />
                                                     <Button
                                                         type="button"
@@ -407,7 +427,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                         size="sm"
                                                         className="h-9 px-3 sm:px-4"
                                                         onClick={() => setData('completed_at', getLocalDateTime())}
-                                                        disabled={!data.started_at}
+                                                        disabled={!data.started_at || !canEdit}
                                                     >
                                                         Teraz
                                                     </Button>
@@ -423,6 +443,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                     </Label>
                                                     <VoiceInput
                                                         onResult={(text) => setData('report_summary', data.report_summary ? `${data.report_summary} ${text}` : text)}
+                                                        disabled={!canEdit}
                                                     />
                                                 </div>
                                                 <Textarea
@@ -431,6 +452,7 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                                     className="min-h-[100px] resize-none"
                                                     value={data.report_summary}
                                                     onChange={(e) => setData('report_summary', e.target.value)}
+                                                    disabled={!canEdit}
                                                 />
                                                 <InputError message={errors.report_summary} />
                                             </div>
@@ -441,19 +463,21 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                         <Button variant="outline" type="button" asChild disabled={processing} className="cursor-pointer w-full sm:w-auto order-2 sm:order-1">
                                             <Link href={index()}>Anuluj</Link>
                                         </Button>
-                                        <Button type="submit" disabled={processing} className="cursor-pointer w-full sm:w-auto order-1 sm:order-2">
-                                            {processing ? (
-                                                <>
-                                                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                                    Zapisywanie...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <LucideSave className="mr-2 h-4 w-4" />
-                                                    Zapisz zmiany
-                                                </>
-                                            )}
-                                        </Button>
+                                        {canEdit && (
+                                            <Button type="submit" disabled={processing} className="cursor-pointer w-full sm:w-auto order-1 sm:order-2">
+                                                {processing ? (
+                                                    <>
+                                                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                        Zapisywanie...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <LucideSave className="mr-2 h-4 w-4" />
+                                                        Zapisz zmiany
+                                                    </>
+                                                )}
+                                            </Button>
+                                        )}
                                     </div>
                                 </form>
                             </CardContent>

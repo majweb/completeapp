@@ -18,7 +18,7 @@ trait BelongsToCompany
         });
 
         static::creating(function (Model $model) {
-            if (auth()->hasUser() && ! $model->company_id) {
+            if (auth()->hasUser() && ! $model->company_id && ! app()->runningInConsole()) {
                 $model->company_id = auth()->user()->company_id;
             }
         });

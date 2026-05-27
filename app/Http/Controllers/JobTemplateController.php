@@ -13,12 +13,49 @@ class JobTemplateController extends Controller
     {
         Gate::authorize('viewAny', JobTemplate::class);
 
+        $templates = JobTemplate::withGlobal()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('job-templates/index', [
-            'templates' => auth()->user()->company->jobTemplates()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(),
+            'myTemplates' => $templates->filter(fn($t) => $t->company_id !== null)->values(),
+            'globalTemplates' => $templates->filter(fn($t) => $t->company_id === null)
+                ->groupBy('category')
+                ->map(fn($group) => $group->values()),
         ]);
+    }
+
+    public function import(int $id)
+    {
+        $jobTemplate = JobTemplate::withoutGlobalScopes()
+            ->whereNull('company_id')
+            ->findOrFail($id);
+
+        Gate::authorize('create', JobTemplate::class);
+
+        if ($jobTemplate->company_id !== null) {
+            abort(403, 'Można importować tylko szablony globalne.');
+        }
+
+        // Sprawdzamy czy firma już nie zaimportowała tego szablonu
+        $exists = JobTemplate::where('company_id', auth()->user()->company_id)
+            ->where('original_id', $jobTemplate->id)
+            ->exists();
+
+        if ($exists) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => 'Ten szablon został już zaimportowany.']);
+            return back();
+        }
+
+        $newTemplate = $jobTemplate->replicate();
+        $newTemplate->company_id = auth()->user()->company_id;
+        $newTemplate->original_id = $jobTemplate->id;
+        $newTemplate->save();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Szablon został dodany do Twojej firmy.']);
+
+        return redirect()->route('job-templates.index');
     }
 
     public function create()
@@ -46,7 +83,9 @@ class JobTemplateController extends Controller
             'version' => 'required|string',
         ]);
 
-        JobTemplate::create($validated);
+        JobTemplate::create(array_merge($validated, [
+            'company_id' => auth()->user()->company_id,
+        ]));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Szablon został utworzony.']);
 

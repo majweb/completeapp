@@ -26,8 +26,30 @@ test('can list job templates', function () {
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
         ->component('job-templates/index', true)
-        ->has('templates', 1)
+        ->has('myTemplates', 1)
+        ->has('globalTemplates')
     );
+});
+
+test('can import global job template', function () {
+    $globalTemplate = JobTemplate::withoutGlobalScopes()->create([
+        'name' => 'Global Template',
+        'company_id' => null,
+        'category' => 'Elektryka',
+        'structure' => [['id' => '1', 'label' => 'Task', 'type' => 'checkbox', 'required' => true]],
+        'version' => '1.0',
+    ]);
+
+    $response = $this->post(route('job-templates.import', ['job_template' => $globalTemplate->id]));
+
+    $response->assertRedirect(route('job-templates.index'));
+
+    $imported = JobTemplate::where('company_id', $this->company->id)
+        ->where('original_id', $globalTemplate->id)
+        ->first();
+
+    expect($imported)->not->toBeNull();
+    expect($imported->name)->toBe('Global Template');
 });
 
 test('can create job template', function () {

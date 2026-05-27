@@ -35,6 +35,7 @@ Route::middleware(['auth', 'verified', 'no-ssr'])->group(function () {
         Route::resource('clients', ClientController::class);
         Route::resource('jobs', JobController::class);
         Route::post('jobs/{job}/duplicate', [JobController::class, 'duplicate'])->name('jobs.duplicate');
+        Route::post('job-templates/{job_template}/import', [JobTemplateController::class, 'import'])->name('job-templates.import');
         Route::resource('job-templates', JobTemplateController::class);
         Route::resource('technicians', TechnicianController::class);
 

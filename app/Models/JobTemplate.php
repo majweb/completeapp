@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToCompany;
@@ -13,6 +14,7 @@ class JobTemplate extends Model
     protected $fillable = [
         'name',
         'description',
+        'category',
         'structure',
         'require_photo_before',
         'require_photo_after',
@@ -30,6 +32,19 @@ class JobTemplate extends Model
         'require_signature' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public function scopeWithGlobal(Builder $query)
+    {
+        return $query->withoutGlobalScope('company')
+            ->where(function ($q) {
+                if (auth()->hasUser()) {
+                    $q->where('company_id', auth()->user()->company_id)
+                        ->orWhereNull('company_id');
+                } else {
+                    $q->whereNull('company_id');
+                }
+            });
+    }
 
     public function original()
     {

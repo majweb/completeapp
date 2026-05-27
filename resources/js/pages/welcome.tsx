@@ -275,7 +275,7 @@ export default function Welcome() {
                                         },
                                         {
                                             name: 'Pełne Bezpieczeństwo',
-                                            description: 'Szyfrowanie danych i zaawansowane uprawnienia (Administrator, Właściciel, Technik).',
+                                            description: 'Szyfrowanie danych i zaawansowane uprawnienia (Właściciel, Manager, Technik).',
                                             icon: ShieldCheck,
                                         },
                                     ].map((feature) => (

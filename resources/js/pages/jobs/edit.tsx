@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { LucideArrowLeft, LucideSave, LucideInfo, LucideMail, LucidePhone, LucideMapPin, LucideUser, LucideNavigation, LucideAlertTriangle, LucideCheckCircle2, LucideCircle, LucideMessageSquare } from 'lucide-react';
+import { LucideArrowLeft, LucideSave, LucideInfo, LucideMail, LucidePhone, LucideMapPin, LucideUser, LucideNavigation, LucideAlertTriangle, LucideCheckCircle2, LucideCircle, LucideMessageSquare, LucideList } from 'lucide-react';
 import { useMemo, Suspense, lazy } from 'react';
 
 import { update } from '@/actions/App/Http/Controllers/JobController';
@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { VoiceInput } from '@/components/voice-input';
-import { index } from '@/routes/jobs';
+import { index, show } from '@/routes/jobs';
 
 interface Client {
     id: number;
@@ -167,13 +167,18 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
             <Head title={`Edytuj Zlecenie #${job.id}`} />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <Button variant="outline" size="icon" asChild className="cursor-pointer shrink-0">
-                            <Link href={index()}>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="icon" asChild className="cursor-pointer shrink-0" title="Wróć do zlecenia">
+                            <Link href={show({ job: job.id })}>
                                 <LucideArrowLeft className="h-4 w-4" />
                             </Link>
                         </Button>
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Edytuj zlecenie #{job.id}</h1>
+                        <Button variant="outline" size="icon" asChild className="cursor-pointer shrink-0" title="Wróć do listy">
+                            <Link href={index()}>
+                                <LucideList className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight ml-2">Edytuj zlecenie #{job.id}</h1>
                         <div className="hidden sm:block">
                             {getStatusBadge(job.status)}
                         </div>
@@ -462,11 +467,14 @@ export default function Edit({ job, clients, templates, technicians }: Props) {
                                     </div>
 
                                     <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
-                                        <Button variant="outline" type="button" asChild disabled={processing} className="cursor-pointer w-full sm:w-auto order-2 sm:order-1">
-                                            <Link href={index()}>Anuluj</Link>
+                                        <Button variant="outline" type="button" asChild disabled={processing} className="cursor-pointer w-full sm:w-auto order-3 sm:order-1">
+                                            <Link href={index()}>Wróć do listy</Link>
+                                        </Button>
+                                        <Button variant="ghost" type="button" asChild disabled={processing} className="cursor-pointer w-full sm:w-auto order-2">
+                                            <Link href={show({ job: job.id })}>Anuluj</Link>
                                         </Button>
                                         {canEdit && (
-                                            <Button type="submit" disabled={processing} className="cursor-pointer w-full sm:w-auto order-1 sm:order-2">
+                                            <Button type="submit" disabled={processing} className="cursor-pointer w-full sm:w-auto order-1 sm:order-3">
                                                 {processing ? (
                                                     <>
                                                         <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

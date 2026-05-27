@@ -87,9 +87,9 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
         <>
             <Head title="Szablony zleceń" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Szablony zleceń</h1>
-                    <Button asChild className="cursor-pointer">
+                    <Button asChild className="w-full cursor-pointer sm:w-auto">
                         <Link href={create.url()}>
                             <LucidePlus className="mr-2 h-4 w-4" />
                             Dodaj własny szablon
@@ -109,8 +109,8 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
                                 <CardTitle>Twoje szablony</CardTitle>
                                 <CardDescription>Szablony specyficzne dla Twojej firmy, które możesz edytować.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <div className="overflow-x-auto">
+                            <CardContent className="p-0 sm:p-6">
+                                <div className="hidden sm:block overflow-x-auto">
                                     <table className="w-full text-sm">
                                         <thead className="border-b bg-muted/50 font-medium">
                                             <tr>
@@ -153,6 +153,41 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Mobile view for My Templates */}
+                                <div className="divide-y sm:hidden">
+                                    {myTemplates.length === 0 ? (
+                                        <div className="text-center text-muted-foreground py-8 px-4">
+                                            Brak własnych szablonów. Zaimportuj gotowy wzorzec z katalogu branżowego.
+                                        </div>
+                                    ) : (
+                                        myTemplates.map((template) => (
+                                            <div key={template.id} className="p-4 space-y-3">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="space-y-1">
+                                                        <h3 className="font-bold leading-none">{template.name}</h3>
+                                                        <p className="text-xs text-muted-foreground line-clamp-2 italic">{template.description}</p>
+                                                    </div>
+                                                    <Badge variant="outline" className="shrink-0">v{template.version}</Badge>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-xs text-muted-foreground">{template.structure.length} pól</span>
+                                                    <div className="flex gap-2">
+                                                        <Button variant="outline" size="sm" asChild>
+                                                            <Link href={edit.url(template.id)}>
+                                                                <LucideEdit className="mr-2 h-3.5 w-3.5" />
+                                                                Edytuj
+                                                            </Link>
+                                                        </Button>
+                                                        <Button variant="outline" size="sm" className="text-destructive" onClick={() => setTemplateToDelete(template.id)}>
+                                                            <LucideTrash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -177,12 +212,12 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
                                 )}
                             </div>
 
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-hide sm:pb-0">
                                 <Button
                                     variant={selectedCategory === null ? 'default' : 'outline'}
                                     size="sm"
                                     onClick={() => setSelectedCategory(null)}
-                                    className="cursor-pointer"
+                                    className="cursor-pointer shrink-0"
                                 >
                                     Wszystkie
                                 </Button>
@@ -192,7 +227,7 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
                                         variant={selectedCategory === category ? 'default' : 'outline'}
                                         size="sm"
                                         onClick={() => setSelectedCategory(category)}
-                                        className="cursor-pointer"
+                                        className="cursor-pointer shrink-0"
                                     >
                                         {category}
                                     </Button>

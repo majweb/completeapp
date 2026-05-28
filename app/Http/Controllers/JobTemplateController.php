@@ -19,10 +19,10 @@ class JobTemplateController extends Controller
             ->get();
 
         return Inertia::render('job-templates/index', [
-            'myTemplates' => $templates->filter(fn($t) => $t->company_id !== null)->values(),
-            'globalTemplates' => $templates->filter(fn($t) => $t->company_id === null)
+            'myTemplates' => $templates->filter(fn ($t) => $t->company_id !== null)->values(),
+            'globalTemplates' => $templates->filter(fn ($t) => $t->company_id === null)
                 ->groupBy('category')
-                ->map(fn($group) => $group->values()),
+                ->map(fn ($group) => $group->values()),
         ]);
     }
 
@@ -45,6 +45,7 @@ class JobTemplateController extends Controller
 
         if ($exists) {
             Inertia::flash('toast', ['type' => 'info', 'message' => 'Ten szablon został już zaimportowany.']);
+
             return back();
         }
 
@@ -69,19 +70,26 @@ class JobTemplateController extends Controller
     {
         Gate::authorize('create', JobTemplate::class);
 
+        $attributes = [];
+        foreach ($request->input('structure', []) as $index => $field) {
+            $attributes["structure.{$index}.label"] = 'etykieta pola '.($index + 1);
+            $attributes["structure.{$index}.type"] = 'typ pola '.($index + 1);
+            $attributes["structure.{$index}.required"] = 'wymagalność pola '.($index + 1);
+        }
+
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:50',
             'description' => 'nullable|string',
             'structure' => 'required|array|min:1',
             'structure.*.id' => 'required|string',
-            'structure.*.label' => 'required|string',
+            'structure.*.label' => 'required|string|max:50',
             'structure.*.type' => 'required|string|in:checkbox,text,number',
             'structure.*.required' => 'required|boolean',
             'require_photo_before' => 'required|boolean',
             'require_photo_after' => 'required|boolean',
             'require_signature' => 'required|boolean',
             'version' => 'required|string',
-        ]);
+        ], [], $attributes);
 
         JobTemplate::create(array_merge($validated, [
             'company_id' => auth()->user()->company_id,
@@ -105,19 +113,26 @@ class JobTemplateController extends Controller
     {
         Gate::authorize('update', $jobTemplate);
 
+        $attributes = [];
+        foreach ($request->input('structure', []) as $index => $field) {
+            $attributes["structure.{$index}.label"] = 'etykieta pola '.($index + 1);
+            $attributes["structure.{$index}.type"] = 'typ pola '.($index + 1);
+            $attributes["structure.{$index}.required"] = 'wymagalność pola '.($index + 1);
+        }
+
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:50',
             'description' => 'nullable|string',
             'structure' => 'required|array|min:1',
             'structure.*.id' => 'required|string',
-            'structure.*.label' => 'required|string',
+            'structure.*.label' => 'required|string|max:50',
             'structure.*.type' => 'required|string|in:checkbox,text,number',
             'structure.*.required' => 'required|boolean',
             'require_photo_before' => 'required|boolean',
             'require_photo_after' => 'required|boolean',
             'require_signature' => 'required|boolean',
             'version' => 'required|string',
-        ]);
+        ], [], $attributes);
 
         // Jeśli szablon jest już używany w zleceniach, tworzymy nową wersję
         if ($jobTemplate->jobs()->exists()) {
@@ -147,6 +162,7 @@ class JobTemplateController extends Controller
 
         if ($jobTemplate->jobs()->exists()) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Nie można usunąć szablonu, który jest używany w zleceniach.']);
+
             return back();
         }
 

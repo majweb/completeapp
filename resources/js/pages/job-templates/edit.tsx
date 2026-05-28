@@ -104,6 +104,7 @@ export default function Edit({ template }: { template: Template }) {
                                                 value={data.name}
                                                 onChange={(e) => setData('name', e.target.value)}
                                                 className="pr-10 focus-visible:ring-primary h-10 transition-all"
+                                                maxLength={50}
                                             />
                                             <VoiceInput
                                                 onResult={(text) => setData('name', text)}
@@ -144,7 +145,7 @@ export default function Edit({ template }: { template: Template }) {
 
                         {/* Sekcja 2: Projektant checklisty */}
                         <Card className="shadow-sm border-muted-foreground/10">
-                            <CardHeader className="flex flex-row items-center justify-between pb-4">
+                            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
                                 <div>
                                     <div className="flex items-center gap-2 text-primary">
                                         <LucideListChecks className="h-5 w-5" />
@@ -152,15 +153,15 @@ export default function Edit({ template }: { template: Template }) {
                                     </div>
                                     <CardDescription>Zdefiniuj kroki, które musi wykonać pracownik.</CardDescription>
                                 </div>
-                                <Button type="button" variant="outline" size="sm" onClick={addField} className="cursor-pointer border-primary/20 text-primary hover:bg-primary/5">
+                                <Button type="button" variant="outline" size="sm" onClick={addField} className="w-full sm:w-auto cursor-pointer border-primary/20 text-primary hover:bg-primary/5">
                                     <LucidePlus className="mr-2 h-4 w-4" />
                                     Dodaj pole
                                 </Button>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-4 px-3 sm:px-6">
                                 <div className="space-y-4">
                                     {data.structure.map((field, index) => (
-                                        <div key={index} className="group relative flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm transition-all hover:border-primary/30 md:flex-row md:items-center">
+                                        <div key={index} className="group relative flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-5 shadow-sm transition-all hover:border-primary/30 lg:flex-row lg:items-center">
                                             <div className="flex-1 space-y-2">
                                                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                                                     Etykieta pola {index + 1}
@@ -169,28 +170,25 @@ export default function Edit({ template }: { template: Template }) {
                                                     <Input
                                                         value={field.label}
                                                         onChange={(e) => updateField(index, 'label', e.target.value)}
-                                                        className="pr-10 h-10 border-muted group-hover:border-primary/20 transition-all"
+                                                        className={`pr-10 h-10 border-muted group-hover:border-primary/20 transition-all ${errors[`structure.${index}.label`] ? 'border-destructive' : ''}`}
+                                                        maxLength={50}
                                                     />
                                                     <VoiceInput
                                                         onResult={(text) => updateField(index, 'label', text)}
                                                         className="absolute right-1 top-1/2 -translate-y-1/2"
                                                     />
                                                 </div>
+                                                <InputError message={errors[`structure.${index}.label` as keyof typeof errors]} />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4 items-end md:flex md:items-center md:gap-4">
-                                                <div className="space-y-2 md:w-48">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 lg:flex-row lg:items-center">
+                                                <div className="space-y-2 w-full sm:w-48">
                                                     <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Typ danych</Label>
                                                     <Select
                                                         value={field.type}
                                                         onValueChange={(value: any) => updateField(index, 'type', value)}
                                                     >
                                                         <SelectTrigger className="h-10">
-                                                            <div className="flex items-center gap-2">
-                                                                {field.type === 'checkbox' && <LucideCheckSquare className="h-4 w-4 text-primary" />}
-                                                                {field.type === 'text' && <LucideType className="h-4 w-4 text-blue-500" />}
-                                                                {field.type === 'number' && <LucideHash className="h-4 w-4 text-orange-500" />}
-                                                                <SelectValue />
-                                                            </div>
+                                                            <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="checkbox" className="cursor-pointer">
@@ -214,7 +212,7 @@ export default function Edit({ template }: { template: Template }) {
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                <div className="flex items-center gap-2 pb-2.5 px-2 md:pb-0 md:pt-6">
+                                                <div className="flex items-center gap-2 pb-1 sm:pb-2.5 px-1 lg:pb-0 lg:pt-6">
                                                     <Checkbox
                                                         id={`req-${index}`}
                                                         checked={field.required}
@@ -228,7 +226,7 @@ export default function Edit({ template }: { template: Template }) {
                                                 type="button"
                                                 variant="ghost"
                                                 size="icon"
-                                                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer absolute -right-2 -top-2 rounded-full border bg-background shadow-sm h-8 w-8 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer absolute -right-2 -top-2 rounded-full border bg-background shadow-sm h-8 w-8 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                                 onClick={() => removeField(index)}
                                                 disabled={data.structure.length === 1}
                                             >
@@ -288,11 +286,11 @@ export default function Edit({ template }: { template: Template }) {
                             </CardContent>
                         </Card>
 
-                        <div className="flex justify-end gap-4 pt-4">
-                            <Button variant="outline" asChild disabled={processing} className="px-8 cursor-pointer">
+                        <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+                            <Button variant="outline" asChild disabled={processing} className="w-full sm:w-auto px-8 cursor-pointer">
                                 <Link href={index.url()}>Anuluj</Link>
                             </Button>
-                            <Button type="submit" disabled={processing} className="px-8 shadow-lg shadow-primary/20 cursor-pointer">
+                            <Button type="submit" disabled={processing} className="w-full sm:w-auto px-8 shadow-lg shadow-primary/20 cursor-pointer">
                                 <LucideSave className="mr-2 h-4 w-4" />
                                 Zapisz zmiany
                             </Button>

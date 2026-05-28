@@ -571,27 +571,27 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                             <p className="text-xs sm:text-sm text-muted-foreground truncate">{job.template?.name}</p>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between lg:justify-end gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
                         {isOwnerOrManager && job.status === 'completed' && (
                             <Button
                                 variant="default"
                                 size="sm"
                                 onClick={() => setIsApproveDialogOpen(true)}
-                                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse border-none cursor-pointer"
+                                className="h-9 px-3 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 border-none cursor-pointer"
                             >
                                 <LucideCheckCircle2 className="mr-2 h-4 w-4" />
-                                Zatwierdź
+                                <span className="text-xs sm:text-sm">Zatwierdź</span>
                             </Button>
                         )}
                         {isOwnerOrManager && !isApproved && (
                             <Button variant="outline" size="sm" asChild className="h-9 px-3 cursor-pointer">
                                 <Link href={editRoute(job.id).url}>
                                     <LucidePencil className="mr-2 h-4 w-4" />
-                                    Edytuj
+                                    <span className="text-xs sm:text-sm">Edytuj</span>
                                 </Link>
                             </Button>
                         )}
-                        <Badge variant="outline" className="text-[10px] sm:text-xs px-2 py-1 uppercase tracking-wider bg-background whitespace-nowrap">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs px-2 py-1 uppercase tracking-wider bg-background whitespace-nowrap shrink-0">
                             {statusLabels[job.status] || job.status}
                         </Badge>
                     </div>

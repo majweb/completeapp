@@ -4,10 +4,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\NewUserAdminNotificationMail;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -80,6 +82,11 @@ class GoogleController extends Controller
             'terms_accepted_at' => now(),
             'email_verified_at' => now(),
         ]);
+
+        $adminEmail = config('mail.from.address');
+        if ($adminEmail) {
+            Mail::to($adminEmail)->send(new NewUserAdminNotificationMail($user));
+        }
 
         Auth::login($user);
 

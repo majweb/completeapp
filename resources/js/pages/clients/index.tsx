@@ -45,6 +45,8 @@ export default function Index({ clients }: Props) {
     const user = auth.user;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
 
+    const isDemo = auth.user.is_demo;
+
     const { delete: destroyClient, post: postImport, processing: importing, setData } = useForm({
         file: null as File | null,
     });
@@ -93,7 +95,7 @@ export default function Index({ clients }: Props) {
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Klienci</h1>
-                    {isOwnerOrManager && (
+                    {isOwnerOrManager && !isDemo && (
                         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                             <input
                                 type="file"

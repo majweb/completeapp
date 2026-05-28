@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { LucideArrowLeft, LucideInfo, LucideMapPin, LucideNavigation, LucideSave } from 'lucide-react';
+import { LucideArrowLeft, LucideInfo, LucideLoader2, LucideMapPin, LucideNavigation, LucideSave } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -314,8 +314,12 @@ export default function Create() {
                                         <Link href={index.url()} preserveScroll>Anuluj</Link>
                                     </Button>
                                     <Button type="submit" disabled={processing} className="w-full md:w-auto cursor-pointer order-1 md:order-2">
-                                        <LucideSave className="mr-2 h-4 w-4" />
-                                        Zapisz klienta
+                                        {processing ? (
+                                            <LucideLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <LucideSave className="mr-2 h-4 w-4" />
+                                        )}
+                                        {processing ? 'Zapisywanie...' : 'Zapisz klienta'}
                                     </Button>
                                 </div>
                             </form>

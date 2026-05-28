@@ -74,13 +74,14 @@ export default function Index({ jobs, filters, technicians }: Props) {
 
     const [jobToDelete, setJobToDelete] = useState<number | null>(null);
     const [jobToDuplicate, setJobToDuplicate] = useState<number | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
     const { delete: destroy, post, processing } = useForm();
 
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || 'all');
     const [technicianId, setTechnicianId] = useState(filters.technician_id || 'all');
 
-    const [showFilters, setShowFilters] = useState(false);
+    const isDemo = auth.user.is_demo;
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -153,7 +154,7 @@ export default function Index({ jobs, filters, technicians }: Props) {
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Zlecenia</h1>
-                    {!isTechnician && (
+                    {!isTechnician && !isDemo && (
                         <Button asChild className="cursor-pointer">
                             <Link href={create()}>
                                 <LucidePlus className="mr-2 h-4 w-4" />
@@ -303,7 +304,7 @@ export default function Index({ jobs, filters, technicians }: Props) {
                                     <Badge variant="secondary" className={`${statusColors[job.status] || 'bg-slate-500'} text-[9px] px-1.5 py-0 h-4 text-white border-0`}>
                                         {statusLabels[job.status] || job.status}
                                     </Badge>
-                                    {!isTechnician && (
+                                    {!isTechnician && !isDemo && (
                                         <Button
                                             variant="ghost"
                                             size="icon"

@@ -48,6 +48,15 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
+        if (auth()->user()->is_demo) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Dodawanie klientów jest zablokowane w wersji demo.',
+            ]);
+
+            return back();
+        }
+
         Gate::authorize('create', Client::class);
 
         $validated = $request->validate([

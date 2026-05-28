@@ -11,6 +11,10 @@ class CompanyController extends Controller
 {
     public function subscription(SubscriptionService $subscriptionService)
     {
+        if (auth()->user()->is_demo) {
+            return redirect()->route('dashboard');
+        }
+
         if ($subscriptionService->isFreeMode()) {
             return redirect()->route('dashboard');
         }
@@ -34,6 +38,10 @@ class CompanyController extends Controller
 
     public function subscribe(Request $request)
     {
+        if (auth()->user()->is_demo) {
+            abort(403, 'Wersja demo nie obsługuje płatności.');
+        }
+
         $request->validate([
             'plan' => 'required|string|in:pro,enterprise',
         ]);
@@ -61,6 +69,10 @@ class CompanyController extends Controller
     }
     public function invoices()
     {
+        if (auth()->user()->is_demo) {
+            return redirect()->route('dashboard');
+        }
+
         $company = auth()->user()->company;
 
         if (auth()->user()->role !== 'owner') {
@@ -81,6 +93,10 @@ class CompanyController extends Controller
 
     public function downloadInvoice(Request $request, $invoiceId)
     {
+        if (auth()->user()->is_demo) {
+            abort(403);
+        }
+
         $company = auth()->user()->company;
 
         if (auth()->user()->role !== 'owner') {

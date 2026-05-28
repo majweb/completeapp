@@ -12,6 +12,18 @@ class Company extends Model implements HasMedia
 {
     use InteractsWithMedia, HasFactory, Billable;
 
+    protected static function booted()
+    {
+        static::deleting(function ($company) {
+            // Jawnie usuwamy powiązane modele, aby wyzwolić ich eventy (np. usuwanie mediów, audytów)
+            // i upewnić się, że wszystko zostanie usunięte nawet jeśli kaskada bazy danych zawiedzie.
+            $company->jobs()->each(fn ($job) => $job->delete());
+            $company->jobTemplates()->each(fn ($template) => $template->delete());
+            $company->clients()->each(fn ($client) => $client->delete());
+            $company->users()->each(fn ($user) => $user->delete());
+        });
+    }
+
     public function stripeCustomFields(): array
     {
         return [
@@ -28,10 +40,12 @@ class Company extends Model implements HasMedia
         'vat_number',
         'primary_color',
         'settings',
+        'is_demo',
     ];
 
     protected $casts = [
         'settings' => 'json',
+        'is_demo' => 'boolean',
     ];
 
     protected $appends = ['logo_url'];

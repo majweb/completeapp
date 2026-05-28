@@ -118,6 +118,15 @@ class JobController extends Controller
 
     public function store(Request $request, SubscriptionService $subscriptionService)
     {
+        if (auth()->user()->is_demo) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Dodawanie zleceń jest zablokowane w wersji demo.',
+            ]);
+
+            return back();
+        }
+
         Gate::authorize('create', Job::class);
 
         $company = auth()->user()->company;
@@ -404,6 +413,10 @@ class JobController extends Controller
     {
         Gate::authorize('view', $job);
 
+        if (auth()->user()->is_demo) {
+            return back()->with('error', 'Wersja Demo: wysyłanie raportów jest zablokowane.');
+        }
+
         if ($job->status->value !== 'completed' && $job->status->value !== 'approved') {
             return back()->with('error', 'Wysyłka raportu jest możliwa tylko dla zakończonych zleceń.');
         }
@@ -527,6 +540,15 @@ class JobController extends Controller
 
     public function duplicate(Job $job, SubscriptionService $subscriptionService)
     {
+        if (auth()->user()->is_demo) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Duplikowanie zleceń jest zablokowane w wersji demo.',
+            ]);
+
+            return back();
+        }
+
         Gate::authorize('create', Job::class);
         Gate::authorize('view', $job);
 

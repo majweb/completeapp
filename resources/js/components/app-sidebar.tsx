@@ -96,7 +96,7 @@ export function AppSidebar() {
                     icon: Settings,
                 });
 
-                if (!isFreeMode) {
+                if (!isFreeMode && !user.is_demo) {
                     mainNavItems.push({
                         title: 'Subskrypcja',
                         href: subscriptionIndex(),

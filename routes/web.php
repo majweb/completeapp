@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Auth\DemoController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientSignatureController;
@@ -21,6 +22,9 @@ use Laravel\Cashier\Http\Controllers\WebhookController;
 Route::inertia('/', 'welcome')->name('home');
 Route::inertia('/terms', 'terms')->name('terms');
 Route::inertia('/privacy', 'privacy')->name('privacy');
+
+Route::post('/demo-login', [DemoController::class, 'login'])
+    ->name('demo.login');
 
 Route::get('auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
 Route::get('auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');

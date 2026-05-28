@@ -50,6 +50,15 @@ class TechnicianController extends Controller
 
     public function store(Request $request, SubscriptionService $subscriptionService)
     {
+        if (auth()->user()->is_demo) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Dodawanie techników jest zablokowane w wersji demo.',
+            ]);
+
+            return back();
+        }
+
         Gate::authorize('create', User::class);
 
         $company = auth()->user()->company;

@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { LucidePlus, LucideTrash2, LucideEdit, LucideCopy, LucideChevronDown, LucideChevronRight, LucideSearch, LucideX } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import { index, create, edit, destroy, importMethod } from '@/actions/App/Http/Controllers/JobTemplateController';
@@ -32,9 +32,12 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+    const { auth } = usePage().props as any;
+    const isDemo = auth.user.is_demo;
+
     const { delete: destroyTemplate, post: importTemplate, processing } = useForm();
 
-    const categories = useMemo(() => Object.keys(globalTemplates).sort(), [globalTemplates]);
+    const categories = useMemo(() => Object.keys(globalTemplates), [globalTemplates]);
 
     const filteredGlobalTemplates = useMemo(() => {
         const filtered: Record<string, Template[]> = {};
@@ -89,12 +92,14 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Szablony zleceń</h1>
-                    <Button asChild className="w-full cursor-pointer sm:w-auto">
-                        <Link href={create.url()}>
-                            <LucidePlus className="mr-2 h-4 w-4" />
-                            Dodaj własny szablon
-                        </Link>
-                    </Button>
+                    {!isDemo && (
+                        <Button asChild className="w-full cursor-pointer sm:w-auto">
+                            <Link href={create.url()}>
+                                <LucidePlus className="mr-2 h-4 w-4" />
+                                Dodaj własny szablon
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 <Tabs defaultValue="my-templates" className="w-full">
@@ -282,7 +287,7 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
                                                                 <div className="mt-4 p-2 bg-muted text-muted-foreground text-center rounded text-sm font-medium">
                                                                     Już zaimportowano
                                                                 </div>
-                                                            ) : (
+                                                            ) : !isDemo ? (
                                                                 <Button
                                                                     variant="secondary"
                                                                     className="w-full mt-4 cursor-pointer"
@@ -291,7 +296,7 @@ export default function Index({ myTemplates, globalTemplates }: IndexProps) {
                                                                     <LucideCopy className="mr-2 h-4 w-4" />
                                                                     Importuj do firmy
                                                                 </Button>
-                                                            )}
+                                                            ) : null}
                                                         </div>
                                                     </Card>
                                                 ))}

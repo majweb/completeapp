@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { LucideUser, LucideMail, LucideLock, LucideBuilding2 } from 'lucide-react';
+import { LucideUser, LucideMail, LucideLock, LucideBuilding2, LucidePlay } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login, privacy, terms } from '@/routes';
 import auth from '@/routes/auth';
+import demo from '@/routes/demo';
 import { store } from '@/routes/register';
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export default function Register({ passwordRules }: Props) {
+    const { post: postDemo, processing: processingDemo } = useForm({});
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -39,6 +41,10 @@ export default function Register({ passwordRules }: Props) {
             password,
             password_confirmation: password,
         }));
+    };
+
+    const handleDemoLogin = () => {
+        postDemo(demo.login().url);
     };
 
     return (
@@ -200,6 +206,17 @@ export default function Register({ passwordRules }: Props) {
                     >
                         {processing && <Spinner />}
                         Załóż konto
+                    </Button>
+
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        onClick={handleDemoLogin}
+                        disabled={processingDemo}
+                    >
+                        {processingDemo ? <Spinner /> : <LucidePlay className="mr-2 h-4 w-4" />}
+                        Wypróbuj wersję Demo
                     </Button>
                 </div>
 

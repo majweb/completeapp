@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                     ...$request->user()->toArray(),
                     'avatar_url' => $request->user()->avatar_url,
                     'company' => $request->user()->company,
+                    'is_demo' => (bool) $request->user()->is_demo,
                 ] : null,
                 'impersonated_by' => session('impersonated_by'),
             ],

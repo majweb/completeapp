@@ -18,7 +18,7 @@ use App\Traits\BelongsToCompany;
 
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'email', 'password', 'company_id', 'role', 'is_active', 'terms_accepted_at', 'google_id', 'google_token', 'google_refresh_token','email_verified_at'])]
+#[Fillable(['name', 'email', 'password', 'company_id', 'role', 'is_active', 'is_demo', 'terms_accepted_at', 'google_id', 'google_token', 'google_refresh_token','email_verified_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'google_token', 'google_refresh_token'])]
 class User extends Authenticatable implements PasskeyUser, MustVerifyEmail
 {
@@ -37,6 +37,7 @@ class User extends Authenticatable implements PasskeyUser, MustVerifyEmail
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'is_active' => 'boolean',
+            'is_demo' => 'boolean',
             'terms_accepted_at' => 'datetime',
         ];
     }

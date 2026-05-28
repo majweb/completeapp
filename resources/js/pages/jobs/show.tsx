@@ -105,6 +105,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
     const isApproved = job.status === 'approved';
     const isOpenAiEnabled = features?.openai ?? false;
+    const isDemo = user.is_demo === true;
 
     const { data, setData, put, processing, errors } = useForm<{
         checklist_content: ChecklistItem[];
@@ -1660,11 +1661,15 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                             </div>
 
                             <div className="space-y-1">
-                                <Button variant="secondary" className="w-full cursor-pointer" onClick={handleSendReport} disabled={!canViewReport}>
+                                <Button variant="secondary" className="w-full cursor-pointer" onClick={handleSendReport} disabled={!canViewReport || isDemo}>
                                     <LucideMail className="mr-2 h-4 w-4" />
                                     Wyślij do klienta
                                 </Button>
-                                {!canViewReport && (
+                                {isDemo ? (
+                                    <p className="text-[10px] text-muted-foreground font-semibold text-center">
+                                        Wersja Demo: wysyłanie raportów jest zablokowane.
+                                    </p>
+                                ) : !canViewReport && (
                                     <p className="text-[10px] text-muted-foreground font-medium text-center">
                                         Wysyłka możliwa po zakończeniu zlecenia i wypełnieniu checklisty.
                                     </p>

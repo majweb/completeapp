@@ -1,5 +1,5 @@
-import { Form, Head } from '@inertiajs/react';
-import { LucideMail, LucideLock } from 'lucide-react';
+import { Form, Head, useForm } from '@inertiajs/react';
+import { LucideMail, LucideLock, LucidePlay } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import auth from '@/routes/auth';
+import demo from '@/routes/demo';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
@@ -20,6 +21,12 @@ type Props = {
 };
 
 export default function Login({ status, canResetPassword }: Props) {
+    const { post: postDemo, processing: processingDemo } = useForm({});
+
+    const handleDemoLogin = () => {
+        postDemo(demo.login().url);
+    };
+
     return (
         <>
             <Head title="Zaloguj się" />
@@ -99,6 +106,17 @@ export default function Login({ status, canResetPassword }: Props) {
                             >
                                 {processing && <Spinner />}
                                 Zaloguj się
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                className="w-full"
+                                onClick={handleDemoLogin}
+                                disabled={processingDemo}
+                            >
+                                {processingDemo ? <Spinner /> : <LucidePlay className="mr-2 h-4 w-4" />}
+                                Wypróbuj wersję Demo
                             </Button>
                         </div>
 

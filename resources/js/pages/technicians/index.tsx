@@ -1,4 +1,4 @@
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import { LucidePlus, LucideTrash2, LucidePencil } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -36,6 +36,9 @@ export default function Index({ technicians }: Props) {
         }
     };
 
+    const { auth } = usePage().props as any;
+    const isDemo = auth.user.is_demo;
+
     return (
         <>
             <Head title="Zarządzanie ekipą" />
@@ -45,12 +48,14 @@ export default function Index({ technicians }: Props) {
                         <h1 className="text-2xl font-bold">Technicy</h1>
                         <p className="text-muted-foreground">Zarządzaj dostępem dla swoich pracowników mobilnych.</p>
                     </div>
-                    <Button className="cursor-pointer" asChild>
-                        <Link href={techniciansCreate()}>
-                            <LucidePlus className="mr-2 h-4 w-4" />
-                            Dodaj technika
-                        </Link>
-                    </Button>
+                    {!isDemo && (
+                        <Button className="cursor-pointer" asChild>
+                            <Link href={techniciansCreate()}>
+                                <LucidePlus className="mr-2 h-4 w-4" />
+                                Dodaj technika
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 <Card>

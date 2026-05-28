@@ -28,6 +28,15 @@ class JobTemplateController extends Controller
 
     public function import(int $id)
     {
+        if (auth()->user()->is_demo) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Importowanie szablonów jest zablokowane w wersji demo.',
+            ]);
+
+            return back();
+        }
+
         $jobTemplate = JobTemplate::withoutGlobalScopes()
             ->whereNull('company_id')
             ->findOrFail($id);
@@ -68,6 +77,15 @@ class JobTemplateController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->user()->is_demo) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Tworzenie szablonów jest zablokowane w wersji demo.',
+            ]);
+
+            return back();
+        }
+
         Gate::authorize('create', JobTemplate::class);
 
         $attributes = [];

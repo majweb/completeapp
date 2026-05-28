@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { LucideArrowLeft, LucidePlus, LucideSave, LucideTrash2, LucideCheckSquare, LucideType, LucideHash, LucideLayout, LucideListChecks, LucideSettings } from 'lucide-react';
+import { LucideArrowLeft, LucidePlus, LucideSave, LucideTrash2, LucideCheckSquare, LucideType, LucideHash, LucideLayout, LucideListChecks, LucideSettings, LucideLoader2 } from 'lucide-react';
 
 import { index, update } from '@/actions/App/Http/Controllers/JobTemplateController';
 import InputError from '@/components/input-error';
@@ -291,8 +291,12 @@ export default function Edit({ template }: { template: Template }) {
                                 <Link href={index.url()}>Anuluj</Link>
                             </Button>
                             <Button type="submit" disabled={processing} className="w-full sm:w-auto px-8 shadow-lg shadow-primary/20 cursor-pointer">
-                                <LucideSave className="mr-2 h-4 w-4" />
-                                Zapisz zmiany
+                                {processing ? (
+                                    <LucideLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <LucideSave className="mr-2 h-4 w-4" />
+                                )}
+                                {processing ? 'Zapisywanie...' : 'Zapisz zmiany'}
                             </Button>
                         </div>
                     </form>

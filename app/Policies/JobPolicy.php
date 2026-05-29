@@ -63,6 +63,23 @@ class JobPolicy
         return $job->assigned_to === $user->id;
     }
 
+    public function generateSummary(User $user, Job $job): bool
+    {
+        if ($user->company_id !== $job->company_id) {
+            return false;
+        }
+
+        if ($job->status->value === 'approved') {
+            return false;
+        }
+
+        if (in_array($user->role, ['owner', 'manager'])) {
+            return true;
+        }
+
+        return $job->assigned_to === $user->id;
+    }
+
     /**
      * Determine whether the user can delete the model.
      */

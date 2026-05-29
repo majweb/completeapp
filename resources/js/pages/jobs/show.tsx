@@ -107,7 +107,7 @@ const statusLabels: Record<string, string> = {
     approved: 'Zatwierdzone',
 };
 
-export default function Show({ job, twilio_enabled, is_ready_for_signature, is_ready_for_report, auth, features, flash }: Props) {
+export default function Show({ job, twilio_enabled, is_ready_for_signature, is_ready_for_report, auth, features }: Props) {
     const user = auth.user as any;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
     const isApproved = job.status === 'approved';
@@ -1503,7 +1503,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, is_r
                                             Podsumowanie AI
                                         </CardTitle>
                                         <p className="text-[10px] text-muted-foreground">Można odświeżyć raz na 30 minut</p>
-                                        {!is_ready_for_report && (
+                                        {!is_ready_for_report && !isApproved && (
                                             <p className="text-[10px] text-muted-foreground font-medium text-center">
                                                 {job.status === 'new'
                                                     ? "Rozpocznij pracę, uzupełnij checklistę i zdjęcia"
@@ -1511,38 +1511,50 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, is_r
                                             </p>
                                         )}
                                     </div>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={handleGenerateAISummary}
-                                        disabled={processing || isApproved || isGeneratingAI || timeLeft !== null || !is_ready_for_report}
-                                        className="cursor-pointer"
-                                        title={!is_ready_for_report ? (job.status === 'new' ? "Rozpocznij pracę, aby móc generować raport" : "Wymagana pełna checklista i zdjęcia") : ""}
-                                    >
-                                        {isGeneratingAI ? (
-                                            <>
-                                                <LucideLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Generowanie...
-                                            </>
-                                        ) : timeLeft ? (
-                                            <>
-                                                <Clock className="mr-2 h-4 w-4" />
-                                                Czekaj {timeLeft}
-                                            </>
-                                        ) : job.report_summary ? (
-                                            <>
-                                                <LucideRefreshCcw className="mr-2 h-4 w-4" />
-                                                Odśwież AI
-                                            </>
-                                        ) : (
-                                            <>
-                                                <LucideSparkles className="mr-2 h-4 w-4" />
-                                                Generuj AI
-                                            </>
-                                        )}
-                                    </Button>
+                                    {!isApproved && (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={handleGenerateAISummary}
+                                            disabled={processing || isGeneratingAI || timeLeft !== null || !is_ready_for_report}
+                                            className="cursor-pointer"
+                                            title={!is_ready_for_report ? (job.status === 'new' ? "Rozpocznij pracę, aby móc generować raport" : "Wymagana pełna checklista i zdjęcia") : ""}
+                                        >
+                                            {isGeneratingAI ? (
+                                                <>
+                                                    <LucideLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Generowanie...
+                                                </>
+                                            ) : timeLeft ? (
+                                                <>
+                                                    <Clock className="mr-2 h-4 w-4" />
+                                                    Czekaj {timeLeft}
+                                                </>
+                                            ) : job.report_summary ? (
+                                                <>
+                                                    <LucideRefreshCcw className="mr-2 h-4 w-4" />
+                                                    Odśwież AI
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <LucideSparkles className="mr-2 h-4 w-4" />
+                                                    Generuj AI
+                                                </>
+                                            )}
+                                        </Button>
+                                    )}
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="relative">
+                                    {isApproved && (
+                                        <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-b-lg">
+                                            <div className="bg-card border shadow-sm p-2 rounded-lg text-center max-w-[150px] mx-auto">
+                                                <LucideCheckCircle2 className="h-5 w-5 text-primary mx-auto mb-1" />
+                                                <p className="text-[10px] font-medium text-muted-foreground">
+                                                    Zlecenie zatwierdzone.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     {isGeneratingAI ? (
                                         <div className="flex flex-col items-center justify-center py-8 space-y-4">
                                             <LucideLoader2 className="h-8 w-8 text-purple-500 animate-spin" />
@@ -1727,7 +1739,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, is_r
                             </div>
 
                             <div className="space-y-1">
-                                <Button variant="secondary" className="w-full cursor-pointer" onClick={handleSendReport} disabled={!canViewReport || isDemo}>
+                                <Button variant="secondary" className="w-full cursor-pointer" onClick={handleSendReport} disabled={!isApproved || isDemo}>
                                     <LucideMail className="mr-2 h-4 w-4" />
                                     Wyślij do klienta
                                 </Button>
@@ -1735,9 +1747,9 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, is_r
                                     <p className="text-[10px] text-muted-foreground font-semibold text-center">
                                         Wersja Demo: wysyłanie raportów jest zablokowane.
                                     </p>
-                                ) : !canViewReport && (
+                                ) : !isApproved && (
                                     <p className="text-[10px] text-muted-foreground font-medium text-center">
-                                        Wysyłka możliwa po zakończeniu zlecenia i wypełnieniu checklisty.
+                                        Wysyłka możliwa po zakończeniu zlecenia i zatwierdzeniu przez managera/właściciela.
                                     </p>
                                 )}
                             </div>

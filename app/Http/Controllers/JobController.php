@@ -24,7 +24,7 @@ class JobController extends Controller
 {
     public function generateSummary(Job $job, AIService $aiService)
     {
-        Gate::authorize('update', $job);
+        Gate::authorize('generateSummary', $job);
 
         // Walidacja gotowości do raportu
         if (! $job->isReadyForReport()) {
@@ -48,6 +48,15 @@ class JobController extends Controller
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => "Podsumowanie można odświeżyć raz na 30 minut. Spróbuj ponownie za ok. {$diff}.",
+            ]);
+
+            return back();
+        }
+
+        if ($job->status === JobStatus::APPROVED) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Nie można generować podsumowania dla zatwierdzonego zlecenia.',
             ]);
 
             return back();
@@ -451,8 +460,8 @@ class JobController extends Controller
             return back()->with('error', 'Wersja Demo: wysyłanie raportów jest zablokowane.');
         }
 
-        if ($job->status->value !== 'completed' && $job->status->value !== 'approved') {
-            return back()->with('error', 'Wysyłka raportu jest możliwa tylko dla zakończonych zleceń.');
+        if ($job->status->value !== 'approved') {
+            return back()->with('error', 'Wysyłka raportu jest możliwa tylko dla zatwierdzonych zleceń.');
         }
 
         $job->load(['client', 'technician', 'template', 'checklist', 'company']);
@@ -504,11 +513,6 @@ class JobController extends Controller
         $job->addMediaFromBase64($request->signature)
             ->usingFileName("signature_{$job->id}.png")
             ->toMediaCollection('signature');
-
-        $job->update([
-            'completed_at' => now(),
-            'status' => JobStatus::COMPLETED,
-        ]);
 
         return back();
     }

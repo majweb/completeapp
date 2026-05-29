@@ -55,6 +55,7 @@ interface Job {
     started_at: string | null;
     completed_at: string | null;
     report_summary: string | null;
+    last_summary_generated_at: string | null;
     client: {
         name: string;
         address: string | null;
@@ -91,6 +92,11 @@ interface Props extends PageProps {
     features?: {
         openai?: boolean;
     };
+    flash: {
+        success?: string | null;
+        error?: string | null;
+        toast?: any;
+    };
 }
 
 const statusLabels: Record<string, string> = {
@@ -100,7 +106,7 @@ const statusLabels: Record<string, string> = {
     approved: 'Zatwierdzone',
 };
 
-export default function Show({ job, twilio_enabled, is_ready_for_signature, auth, features }: Props) {
+export default function Show({ job, twilio_enabled, is_ready_for_signature, auth, features, flash }: Props) {
     const user = auth.user as any;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
     const isApproved = job.status === 'approved';
@@ -122,6 +128,31 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     const [isDeclarationAccepted, setIsDeclarationAccepted] = useState(false);
     const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [timeLeft, setTimeLeft] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!job.last_summary_generated_at) {
+            return;
+        }
+
+        const timer = setInterval(() => {
+            const last = new Date(job.last_summary_generated_at!).getTime();
+            const now = new Date().getTime();
+            const diff = now - last;
+            const thirtyMinutes = 30 * 60 * 1000;
+
+            if (diff < thirtyMinutes) {
+                const remaining = thirtyMinutes - diff;
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+            } else {
+                setTimeLeft(null);
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [job.last_summary_generated_at]);
     const [mediaToDelete, setMediaToDelete] = useState<number | null>(null);
     const [dragOver, setDragOver] = useState<string | null>(null);
     const [uploadingCollection, setUploadingCollection] = useState<string | null>(null);
@@ -130,6 +161,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
     const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
     const requiredFields = data.checklist_content.filter(i => i.required);
     const completedRequired = requiredFields.filter(i => i.value !== null && i.value !== '' && i.value !== false);
@@ -378,12 +410,14 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
 
     const handleApproveJob = () => {
         router.post(approve(job.id).url, {}, {
+            preserveScroll: true,
             onSuccess: () => setIsApproveDialogOpen(false),
         });
     };
 
     const handleSendReport = () => {
         router.post(sendReport.url({ job: job.id }), {}, {
+            preserveScroll: true,
             onSuccess: () => {
                 // Toast is handled by backend flash
             },
@@ -425,8 +459,10 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
     };
 
     const handleGenerateAISummary = () => {
+        setIsGeneratingAI(true);
         router.post(generateSummaryRoute(job.id).url, {}, {
             preserveScroll: true,
+            onFinish: () => setIsGeneratingAI(false),
         });
     };
 
@@ -624,7 +660,7 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                 </div>
                             </div>
                             <Button
-                                onClick={() => router.put(update(job.id).url, { status: 'in_progress' })}
+                                onClick={() => router.put(update(job.id).url, { status: 'in_progress' }, { preserveScroll: true })}
                                 size="lg"
                                 className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 sm:h-16 px-6 sm:px-10 text-base sm:text-lg rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all group"
                             >
@@ -1460,18 +1496,31 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                         {isOpenAiEnabled && (
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between">
-                                    <CardTitle className="flex items-center gap-2">
-                                        <LucideSparkles className="h-5 w-5 text-purple-500" />
-                                        Podsumowanie AI
-                                    </CardTitle>
+                                    <div className="flex flex-col gap-1">
+                                        <CardTitle className="flex items-center gap-2">
+                                            <LucideSparkles className="h-5 w-5 text-purple-500" />
+                                            Podsumowanie AI
+                                        </CardTitle>
+                                        <p className="text-[10px] text-muted-foreground">Można odświeżyć raz na 30 minut</p>
+                                    </div>
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={handleGenerateAISummary}
-                                        disabled={processing || isApproved}
+                                        disabled={processing || isApproved || isGeneratingAI || timeLeft !== null}
                                         className="cursor-pointer"
                                     >
-                                        {job.report_summary ? (
+                                        {isGeneratingAI ? (
+                                            <>
+                                                <LucideLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Generowanie...
+                                            </>
+                                        ) : timeLeft ? (
+                                            <>
+                                                <Clock className="mr-2 h-4 w-4" />
+                                                Czekaj {timeLeft}
+                                            </>
+                                        ) : job.report_summary ? (
                                             <>
                                                 <LucideRefreshCcw className="mr-2 h-4 w-4" />
                                                 Odśwież AI
@@ -1485,10 +1534,18 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                     </Button>
                                 </CardHeader>
                                 <CardContent>
-                                    {job.report_summary ? (
-                                        <div className="bg-muted/30 p-4 rounded-lg border italic text-sm leading-relaxed whitespace-pre-wrap">
-                                            {job.report_summary}
+                                    {isGeneratingAI ? (
+                                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                                            <LucideLoader2 className="h-8 w-8 text-purple-500 animate-spin" />
+                                            <p className="text-sm text-muted-foreground animate-pulse">Sztuczna inteligencja analizuje dane i przygotowuje raport...</p>
                                         </div>
+                                    ) : job.report_summary ? (
+                                        <div
+                                            className="bg-muted/30 p-4 rounded-lg border italic text-sm leading-relaxed whitespace-pre-wrap"
+                                            dangerouslySetInnerHTML={{
+                                                __html: job.report_summary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                            }}
+                                        />
                                     ) : (
                                         <p className="text-sm text-muted-foreground text-center py-4">
                                             Brak podsumowania. Kliknij przycisk powyżej, aby wygenerować automatyczne podsumowanie pracy na podstawie checklisty.

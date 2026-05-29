@@ -83,7 +83,11 @@ test('it calls openai api when key is present', function () {
     expect($summary)->toBe('AI Generated Summary');
 
     Http::assertSent(function ($request) {
+        $messages = $request->data()['messages'];
+        $systemPrompt = $messages[0]['content'];
+
         return $request->url() === 'https://api.openai.com/v1/chat/completions' &&
-               $request->header('Authorization')[0] === 'Bearer test-key';
+               $request->header('Authorization')[0] === 'Bearer test-key' &&
+               str_contains($systemPrompt, 'Nie dodawaj na końcu podziękowań');
     });
 });

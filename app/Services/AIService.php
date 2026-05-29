@@ -41,15 +41,28 @@ class AIService
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'Jesteś profesjonalnym asystentem technicznym. Na podstawie dostarczonych danych ze zlecenia serwisowego, wygeneruj zwięzłe, profesjonalne podsumowanie wykonanych prac w języku polskim. Skup się na kluczowych wynikach checklisty i ewentualnych uwagach.'
+                            'content' => 'Jesteś ekspertem technicznym i specjalistą ds. obsługi klienta w firmie serwisowej.
+Twoim zadaniem jest przygotowanie profesjonalnego, eleganckiego podsumowania zlecenia dla klienta.
+
+Zasady redakcji:
+1. Używaj języka korzyści i tonu eksperckiego, ale przystępnego.
+2. Struktura raportu:
+   - Cel wizyty (krótkie nawiązanie do typu usługi).
+   - Przebieg prac (najważniejsze punkty z checklisty, sformułowane jako czynności wykonane).
+   - Wynik weryfikacji (potwierdzenie sprawności lub lista wykrytych nieprawidłowości).
+   - Rekomendacje (zalecenia dla klienta na przyszłość, np. termin kolejnego przeglądu).
+3. Nie używaj sformułowań typu "na podstawie danych", "system wygenerował". Pisz tak, jakby pisał to technik.
+4. Unikaj powtarzania etykiet "TAK/NIE" – zamiast "Sprawdzenie szczelności: TAK", napisz "Przeprowadzono test szczelności układu z wynikiem pozytywnym".
+5. Formatowanie: Używaj pogrubienia (np. **tekst**) dla kluczowych terminów, parametrów technicznych lub nagłówków sekcji (np. **Cel wizyty:**). Nie używaj gwiazdek (*) do tworzenia list wypunktowanych (użyj myślników).
+6. Nie dodawaj na końcu podziękowań ani formułek typu "Dziękujemy za zaufanie". Raport powinien kończyć się na rekomendacjach.'
                         ],
                         [
                             'role' => 'user',
-                            'content' => "Zlecenie: {$job->template->name}\nKlient: {$job->client->name}\nDane z checklisty:\n" . json_encode($jobData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                            'content' => "Zlecenie: {$job->template->name}\nOpis usługi: {$job->template->description}\nKlient: {$job->client->name}\nUwagi o kliencie: {$job->client->notes}\nDane z checklisty:\n" . json_encode($jobData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                         ]
                     ],
                     'temperature' => 0.7,
-                    'max_tokens' => 500,
+                    'max_tokens' => 800,
                 ]);
 
             if ($response->successful()) {
@@ -67,16 +80,20 @@ class AIService
 
     protected function prepareJobDataForAI(Job $job): array
     {
-        $data = [];
+        $data = [
+            'typ_uslugi' => $job->template->name,
+            'wyniki_inspekcji' => []
+        ];
+
         if ($job->checklist && is_array($job->checklist->content)) {
             foreach ($job->checklist->content as $item) {
-                $value = $item['value'] ?? 'brak danych';
+                $value = $item['value'] ?? 'nie dotyczy';
                 if ($item['type'] === 'checkbox') {
-                    $value = $item['value'] ? 'TAK' : 'NIE';
+                    $value = $item['value'] ? 'Potwierdzono / Prawidłowe' : 'Brak / Nieprawidłowe';
                 }
-                $data[] = [
-                    'etykieta' => $item['label'],
-                    'wartosc' => $value
+                $data['wyniki_inspekcji'][] = [
+                    'element' => $item['label'],
+                    'status' => $value
                 ];
             }
         }

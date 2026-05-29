@@ -36,6 +36,7 @@ class Job extends Model implements HasMedia
         'started_at',
         'completed_at',
         'report_summary',
+        'last_summary_generated_at',
     ];
 
     protected $casts = [
@@ -43,6 +44,7 @@ class Job extends Model implements HasMedia
         'scheduled_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'last_summary_generated_at' => 'datetime',
     ];
 
     public function client()

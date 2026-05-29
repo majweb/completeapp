@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -33,6 +34,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
         $this->configureDefaults();
+
+        Str::macro('markdownToHtml', function ($text) {
+            // Zamiana **tekst** na <strong>tekst</strong>
+            $text = preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $text);
+            // Zamiana * tekst na listę (bardzo prosta wersja)
+            // Ale użytkownik prosił o pogrubienie, więc skupmy się na **
+            return $text;
+        });
 
         Inertia::share([
             'isFreeMode' => fn () => app(SubscriptionService::class)->isFreeMode(),

@@ -106,7 +106,7 @@
         <div class="section-header">
             <div class="section-title">PODSUMOWANIE RAPORTU</div>
         </div>
-        <div style="white-space: pre-wrap; word-wrap: break-word;">{{ $job->report_summary }}</div>
+        <div style="white-space: pre-wrap; word-wrap: break-word;">{!! \Illuminate\Support\Str::markdownToHtml($job->report_summary) !!}</div>
     </div>
     @endif
 

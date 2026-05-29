@@ -26,13 +26,30 @@ class JobController extends Controller
     {
         Gate::authorize('update', $job);
 
+        // Ograniczenie do raz na 30 minut
+        if ($job->last_summary_generated_at && $job->last_summary_generated_at->addMinutes(30)->isFuture()) {
+            $diff = $job->last_summary_generated_at->addMinutes(30)->diffForHumans();
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => "Podsumowanie można odświeżyć raz na 30 minut. Spróbuj ponownie za ok. {$diff}.",
+            ]);
+
+            return back();
+        }
+
         $summary = $aiService->generateJobSummary($job);
 
         $job->update([
             'report_summary' => $summary,
+            'last_summary_generated_at' => now(),
         ]);
 
-        return back()->with('success', 'Podsumowanie AI zostało wygenerowane.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Podsumowanie AI zostało wygenerowane.',
+        ]);
+
+        return back();
     }
 
     public function downloadReport(Job $job)
@@ -108,7 +125,7 @@ class JobController extends Controller
 
         return Inertia::render('jobs/create', [
             'clients' => $user->company->clients()->orderBy('name')->get(),
-            'templates' => $user->company->jobTemplates()->orderBy('name')->get(),
+            'templates' => $user->company->jobTemplates()->where('is_active', true)->orderBy('name')->get(),
             'technicians' => $user->company->users()
                 ->whereIn('role', ['technician', 'manager', 'owner'])
                 ->orderBy('name')

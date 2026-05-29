@@ -18,9 +18,15 @@ class JobTemplateController extends Controller
             ->orderBy('name')
             ->get();
 
+        $myTemplateOriginalIds = $templates->filter(fn ($t) => $t->company_id !== null)
+            ->map(fn ($t) => $t->original_id)
+            ->filter()
+            ->values()
+            ->toArray();
+
         return Inertia::render('job-templates/index', [
             'myTemplates' => $templates->filter(fn ($t) => $t->company_id !== null)->values(),
-            'globalTemplates' => $templates->filter(fn ($t) => $t->company_id === null)
+            'globalTemplates' => $templates->filter(fn ($t) => $t->company_id === null && ! in_array($t->id, $myTemplateOriginalIds))
                 ->groupBy('category')
                 ->map(fn ($group) => $group->values()),
         ]);
@@ -61,6 +67,7 @@ class JobTemplateController extends Controller
         $newTemplate = $jobTemplate->replicate();
         $newTemplate->company_id = auth()->user()->company_id;
         $newTemplate->original_id = $jobTemplate->id;
+        $newTemplate->is_active = true;
         $newTemplate->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Szablon został dodany do Twojej firmy.']);
@@ -109,8 +116,9 @@ class JobTemplateController extends Controller
             'version' => 'required|string',
         ], [], $attributes);
 
-        JobTemplate::create(array_merge($validated, [
+        $newTemplate = JobTemplate::create(array_merge($validated, [
             'company_id' => auth()->user()->company_id,
+            'is_active' => true,
         ]));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Szablon został utworzony.']);

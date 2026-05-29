@@ -42,12 +42,35 @@ class DashboardController extends Controller
 
         // Technician specific: next assigned jobs
         $next_jobs = [];
+        $route_jobs = [];
         if ($user->role === 'technician') {
             $next_jobs = (clone $statsQuery)->with('client')
                 ->whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS])
                 ->orderBy('scheduled_at')
                 ->limit(3)
                 ->get();
+
+            // Jobs for today's route
+            $route_jobs = Job::query()
+                ->with('client:id,name,address,latitude,longitude')
+                ->whereRelation('technician', 'id', $user->id)
+                ->whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS, JobStatus::COMPLETED])
+                ->whereDate('scheduled_at', now())
+                ->whereHas('client', function ($query) {
+                    $query->whereNotNull('latitude')->whereNotNull('longitude');
+                })
+                ->orderBy('scheduled_at')
+                ->get()
+                ->map(fn ($job) => [
+                    'id' => $job->id,
+                    'status' => $job->status->value,
+                    'status_label' => $job->status->label(),
+                    'client_name' => $job->client->name,
+                    'address' => $job->client->address,
+                    'latitude' => (float) $job->client->latitude,
+                    'longitude' => (float) $job->client->longitude,
+                    'scheduled_at' => $job->scheduled_at->format('H:i'),
+                ]);
         }
 
         // Monthly activity data
@@ -73,7 +96,7 @@ class DashboardController extends Controller
         $map_jobs = [];
         if ($user->role === 'owner' || $user->role === 'manager') {
             $map_jobs = Job::query()
-                ->with('client:id,name,address,latitude,longitude')
+                ->with(['client:id,name,address,latitude,longitude', 'technician:id,name'])
                 ->whereIn('status', [JobStatus::NEW, JobStatus::IN_PROGRESS])
                 ->whereHas('client', function ($query) {
                     $query->whereNotNull('latitude')->whereNotNull('longitude');
@@ -87,6 +110,8 @@ class DashboardController extends Controller
                     'address' => $job->client->address,
                     'latitude' => (float) $job->client->latitude,
                     'longitude' => (float) $job->client->longitude,
+                    'technician_name' => $job->technician?->name ?? 'Nieprzypisane',
+                    'scheduled_at' => $job->scheduled_at?->format('H:i'),
                 ]);
         }
 
@@ -95,6 +120,7 @@ class DashboardController extends Controller
             'activity_data' => $activity_data,
             'recent_jobs' => $recent_jobs,
             'next_jobs' => $next_jobs,
+            'route_jobs' => $route_jobs,
             'map_jobs' => $map_jobs,
         ]);
     }

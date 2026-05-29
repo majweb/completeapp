@@ -60,10 +60,11 @@ interface DashboardProps {
     activity_data: { date: string; count: number }[];
     recent_jobs: any[];
     next_jobs: any[];
+    route_jobs: any[];
     map_jobs?: any[];
 }
 
-export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs, map_jobs = [] }: DashboardProps) {
+export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs, route_jobs = [], map_jobs = [] }: DashboardProps) {
     const { auth } = usePage<any>().props;
     const isTechnician = auth.user.role === 'technician';
     const [lastKnownJobId, setLastKnownJobId] = useState(stats.latest_job_id);
@@ -175,6 +176,57 @@ export default function Dashboard({ stats, activity_data, recent_jobs, next_jobs
 
                 {isTechnician && next_jobs.length > 0 && (
                     <div className="grid gap-4 md:grid-cols-1">
+                        {route_jobs.length > 0 && (
+                            <Card className="border-blue-200 bg-blue-50/30 overflow-hidden">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-blue-900 flex items-center gap-2">
+                                                <MapPin className="h-5 w-5 text-blue-600" />
+                                                Twoja trasa na dziś
+                                            </CardTitle>
+                                            <CardDescription>Zaplanowana kolejność zleceń dla optymalnego przejazdu</CardDescription>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex flex-col md:flex-row gap-6">
+                                        <div className="w-full md:w-2/3 h-[300px] md:h-[400px]">
+                                            <Suspense fallback={<div className="h-full bg-muted animate-pulse rounded-lg" />}>
+                                                <JobMap jobs={route_jobs} height="100%" showRoute={true} />
+                                            </Suspense>
+                                        </div>
+                                        <div className="w-full md:w-1/3 flex flex-col gap-3">
+                                            <h4 className="text-sm font-semibold text-blue-900 uppercase tracking-wider">Kolejne punkty:</h4>
+                                            <div className="flex flex-col gap-2 overflow-y-auto max-h-[400px] pr-2">
+                                                {route_jobs.map((job, index) => (
+                                                    <Link
+                                                        key={job.id}
+                                                        href={jobShow.url({ job: job.id })}
+                                                        className="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100 hover:border-blue-300 transition-colors shadow-sm group"
+                                                    >
+                                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold mt-0.5">
+                                                            {index + 1}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between mb-0.5">
+                                                                <span className="text-xs font-mono font-bold text-blue-700">{job.scheduled_at}</span>
+                                                                <Badge variant="outline" className="text-[10px] py-0 px-1 leading-tight h-4">
+                                                                    {STATUS_LABELS[job.status]}
+                                                                </Badge>
+                                                            </div>
+                                                            <h5 className="text-sm font-bold truncate group-hover:text-blue-600 transition-colors">{job.client_name}</h5>
+                                                            <p className="text-xs text-muted-foreground truncate">{job.address}</p>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         <Card className="border-blue-200 bg-blue-50/30">
                             <CardHeader>
                                 <CardTitle className="text-blue-900">Twoje najbliższe zadania</CardTitle>

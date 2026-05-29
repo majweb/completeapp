@@ -26,6 +26,22 @@ class JobController extends Controller
     {
         Gate::authorize('update', $job);
 
+        // Walidacja gotowości do raportu
+        if (! $job->isReadyForReport()) {
+            $message = 'Uzupełnij checklistę i załącz wymagane zdjęcia, aby wygenerować raport.';
+
+            if ($job->status === JobStatus::NEW) {
+                $message = 'Rozpocznij pracę, uzupełnij checklistę i załącz wymagane zdjęcia, aby wygenerować raport.';
+            }
+
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => $message,
+            ]);
+
+            return back();
+        }
+
         // Ograniczenie do raz na 30 minut
         if ($job->last_summary_generated_at && $job->last_summary_generated_at->addMinutes(30)->isFuture()) {
             $diff = $job->last_summary_generated_at->addMinutes(30)->diffForHumans();
@@ -202,6 +218,7 @@ class JobController extends Controller
         return Inertia::render('jobs/show', [
             'twilio_enabled' => config('services.twilio.enabled'),
             'is_ready_for_signature' => $job->isReadyForSignature(),
+            'is_ready_for_report' => $job->isReadyForReport(),
             'job' => array_merge($job->toArray(), [
                 'audit_logs' => $allLogs,
                 'media' => [

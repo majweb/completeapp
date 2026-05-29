@@ -67,12 +67,30 @@ class Job extends Model implements HasMedia
         return $this->hasOne(Checklist::class);
     }
 
+    public function isReadyForReport(): bool
+    {
+        if ($this->status === JobStatus::NEW) {
+            return false;
+        }
+
+        return $this->isReadyForSignature();
+    }
+
     public function isReadyForSignature(): bool
     {
         $template = $this->template;
 
-        // 1. Walidacja checklisty (jeśli istnieje)
-        if ($this->checklist) {
+        // 1. Walidacja checklisty
+        if (!$this->checklist) {
+            // Jeśli szablon ma zdefiniowaną strukturę z polami wymaganymi, a checklisty brak - nie jest gotowe
+            if ($template && !empty($template->structure)) {
+                foreach ($template->structure as $field) {
+                    if (!empty($field['required'])) {
+                        return false;
+                    }
+                }
+            }
+        } else {
             foreach ($this->checklist->content as $item) {
                 $val = $item['value'] ?? null;
                 if (!empty($item['required']) && ($val === null || $val === '' || $val === false)) {

@@ -89,6 +89,7 @@ interface Props extends PageProps {
     job: Job;
     twilio_enabled: boolean;
     is_ready_for_signature: boolean;
+    is_ready_for_report: boolean;
     features?: {
         openai?: boolean;
     };
@@ -106,7 +107,7 @@ const statusLabels: Record<string, string> = {
     approved: 'Zatwierdzone',
 };
 
-export default function Show({ job, twilio_enabled, is_ready_for_signature, auth, features, flash }: Props) {
+export default function Show({ job, twilio_enabled, is_ready_for_signature, is_ready_for_report, auth, features, flash }: Props) {
     const user = auth.user as any;
     const isOwnerOrManager = user.role === 'owner' || user.role === 'manager';
     const isApproved = job.status === 'approved';
@@ -1502,13 +1503,21 @@ export default function Show({ job, twilio_enabled, is_ready_for_signature, auth
                                             Podsumowanie AI
                                         </CardTitle>
                                         <p className="text-[10px] text-muted-foreground">Można odświeżyć raz na 30 minut</p>
+                                        {!is_ready_for_report && (
+                                            <p className="text-[10px] text-muted-foreground font-medium text-center">
+                                                {job.status === 'new'
+                                                    ? "Rozpocznij pracę, uzupełnij checklistę i zdjęcia"
+                                                    : "Uzupełnij checklistę i załącz wymagane zdjęcia"}
+                                            </p>
+                                        )}
                                     </div>
                                     <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={handleGenerateAISummary}
-                                        disabled={processing || isApproved || isGeneratingAI || timeLeft !== null}
+                                        disabled={processing || isApproved || isGeneratingAI || timeLeft !== null || !is_ready_for_report}
                                         className="cursor-pointer"
+                                        title={!is_ready_for_report ? (job.status === 'new' ? "Rozpocznij pracę, aby móc generować raport" : "Wymagana pełna checklista i zdjęcia") : ""}
                                     >
                                         {isGeneratingAI ? (
                                             <>

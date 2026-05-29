@@ -273,6 +273,24 @@ class JobController extends Controller
     {
         Gate::authorize('update', $job);
 
+        // Jeśli status to completed i próba zmiany na in_progress (re-opening)
+        if ($job->status->value === 'completed' && $request->status === 'in_progress') {
+            $job->update([
+                'status' => 'in_progress',
+                'completed_at' => null,
+            ]);
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Zlecenie zostało przywrócone do edycji.']);
+
+            return back();
+        }
+
+        // Jeśli status to completed lub approved, blokujemy każdą inną edycję (nawet dla managera)
+        if (in_array($job->status->value, ['completed', 'approved'])) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Nie można edytować zamkniętego zlecenia.']);
+            return back();
+        }
+
         $validated = $request->validate([
             'client_id' => 'sometimes|exists:clients,id',
             'assigned_to' => 'sometimes|exists:users,id',

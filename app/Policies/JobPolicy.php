@@ -39,25 +39,30 @@ class JobPolicy
         return in_array($user->role, ['owner', 'manager']);
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
     public function update(User $user, Job $job): bool
     {
         if ($user->company_id !== $job->company_id) {
             return false;
         }
 
-        if ($job->status->value === 'approved') {
-            return false;
+        // Zablokuj edycję dla WSZYSTKICH jeśli status to completed lub approved
+        if (in_array($job->status->value, ['completed', 'approved'])) {
+            // Wyjątek: Manager/Owner może chcieć zmienić status z completed na in_progress
+            // Ta logika zostanie obsłużona w kontrolerze, ale tutaj musimy pozwolić na samo wywołanie update
+            // jeśli intencją jest zmiana statusu. Jednak Policy 'update' jest ogólne.
+            // Zmienimy to tak: jeśli status jest 'approved', nikt nie może nic zrobić.
+            // Jeśli 'completed', tylko owner/manager może wejść, ale kontroler ograniczy co może zmienić.
+
+            if ($job->status->value === 'approved') {
+                return false;
+            }
+
+            // Jeśli completed, pozwalamy tylko owner/manager (aby mogli przywrócić status)
+            return in_array($user->role, ['owner', 'manager']);
         }
 
         if (in_array($user->role, ['owner', 'manager'])) {
             return true;
-        }
-
-        if ($job->status->value === 'completed') {
-            return false;
         }
 
         return $job->assigned_to === $user->id;

@@ -178,9 +178,12 @@ export default function PublicJobView({ job }: Props) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-                                {job.report_summary}
-                            </div>
+                            <div
+                                className="text-sm leading-relaxed text-foreground whitespace-pre-wrap"
+                                dangerouslySetInnerHTML={{
+                                    __html: job.report_summary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                }}
+                            />
                         </CardContent>
                     </Card>
                 )}
